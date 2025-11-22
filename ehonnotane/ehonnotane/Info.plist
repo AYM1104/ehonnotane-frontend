@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_BASE_URL</key>
+	<string>https://ehonnotane-backend-woinm3pipq-uw.a.run.app</string>
+	<key>AUTH0_DOMAIN</key>
+	<string>ehonnotane.jp.auth0.com</string>
+	<key>AUTH0_CLIENT_ID</key>
+	<string>b1sTk9gTW2rjddFtvu0w7ZrsFYk2ldfh</string>
+	<key>AUTH0_AUDIENCE</key>
+	<string>https://api.ehonnotane</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>auth0</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.ehonnotane.ayu</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

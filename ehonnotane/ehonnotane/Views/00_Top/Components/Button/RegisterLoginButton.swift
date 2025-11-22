@@ -1,0 +1,45 @@
+import SwiftUI
+
+/// 認証ボタンコンポーネント（ユーザー登録、ログイン）
+struct RegisterLoginButton: View {
+    @Binding var loginModalMode: LoginModalMode
+    @Binding var showLoginModal: Bool
+    
+    @ViewBuilder
+    var body: some View {
+
+        // ユーザー登録ボタン（セカンダリスタイル）
+        PrimaryButton(
+            title: "ユーザー登録",
+            style: .secondary,
+            width: 292,
+            fontName: "YuseiMagic-Regular",
+            fontSize: 24,
+            height: 48,
+            action: {
+                // サインアップ用のモーダルを表示
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    loginModalMode = .signup
+                    showLoginModal = true
+                }
+            }
+        )
+        
+        // ログインボタン（プライマリスタイル）
+        PrimaryButton(
+            title: "ログイン",
+            width: 292,
+            fontName: "YuseiMagic-Regular",
+            fontSize: 24,
+            height: 48,
+            action: {
+                // ログイン用のモーダルを表示
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    loginModalMode = .login
+                    showLoginModal = true
+                }
+            }
+        )
+    }
+}
+
