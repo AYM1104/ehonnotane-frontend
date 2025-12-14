@@ -320,3 +320,46 @@ struct Auth0CleanupResponse: Codable {
         case error
     }
 }
+
+#if DEBUG
+extension StorybookResponse {
+    /// プレビューでログインせずに表示するためのダミーデータ
+    static var previewSample: StorybookResponse {
+        StorybookResponse(
+            id: 1,
+            storyPlotId: 999,
+            userId: "preview-user",
+            childId: nil,
+            title: "プレビューの森へようこそ",
+            description: "ログイン不要でプレビュー確認するためのサンプル絵本です。",
+            keywords: ["プレビュー", "サンプル"],
+            storyContent: "全ページの原稿を含むサンプル本文",
+            page1: "ある日、ちいさなタネが風に乗って森へたどり着きました。",
+            page2: "タネは優しい妖精と出会い、不思議な冒険へ進みます。",
+            page3: "森の動物たちが集まり、タネを応援してくれました。",
+            page4: "タネは光る泉で大切な願いを叶える方法を学びます。",
+            page5: "願いが叶い、タネは大きな木に成長して森を照らしました。",
+            page6: nil,
+            page7: nil,
+            page8: nil,
+            page9: nil,
+            page10: nil,
+            coverImageUrl: "https://picsum.photos/seed/ehon-cover/900/1600",
+            page1ImageUrl: "https://picsum.photos/seed/ehon-page1/900/1600",
+            page2ImageUrl: "https://picsum.photos/seed/ehon-page2/900/1600",
+            page3ImageUrl: "https://picsum.photos/seed/ehon-page3/900/1600",
+            page4ImageUrl: "https://picsum.photos/seed/ehon-page4/900/1600",
+            page5ImageUrl: "https://picsum.photos/seed/ehon-page5/900/1600",
+            page6ImageUrl: nil,
+            page7ImageUrl: nil,
+            page8ImageUrl: nil,
+            page9ImageUrl: nil,
+            page10ImageUrl: nil,
+            imageGenerationStatus: "completed",
+            isFavorite: false,
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z"
+        )
+    }
+}
+#endif

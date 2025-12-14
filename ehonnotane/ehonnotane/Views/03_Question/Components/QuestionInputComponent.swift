@@ -16,7 +16,8 @@ struct QuestionInputComponent: View {
             // InputBoxコンポーネントを使用
             InputBox(
                 placeholder: question.placeholder ?? "ここに入力",
-                text: $answer
+                text: $answer,
+                isFocused: isTextFieldFocused
             )
             .disabled(isSubmitting)
             

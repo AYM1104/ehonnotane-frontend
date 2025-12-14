@@ -25,6 +25,7 @@ class ImageGenerationProgressMonitor: ObservableObject {
     init(
         storybookId: Int,
         storybookService: StorybookService = .shared,
+        initialTotalPages: Int? = nil,
         onCompleted: (() async -> Void)? = nil,
         onFailed: ((String) -> Void)? = nil
     ) {
@@ -32,6 +33,9 @@ class ImageGenerationProgressMonitor: ObservableObject {
         self.storybookService = storybookService
         self.onCompleted = onCompleted
         self.onFailed = onFailed
+        if let initialTotalPages {
+            self.totalPages = initialTotalPages
+        }
     }
     
     // MARK: - Public Methods
@@ -76,19 +80,31 @@ class ImageGenerationProgressMonitor: ObservableObject {
                     self.totalPages = progress.totalPages
                 }
                 
-                // 完了したらポーリング停止
-                if progress.status == "completed" {
+                // デバッグログ: 進捗情報を出力
+                print("📊 ImageGenerationProgressMonitor: 進捗取得 - status: \(progress.status), progress: \(progress.progressPercent)%, page: \(progress.currentPage)/\(progress.totalPages)")
+                
+                // 完了したらポーリング停止（大文字小文字を無視して比較）
+                if progress.status.lowercased() == "completed" {
+                    print("✅ ImageGenerationProgressMonitor: 画像生成完了を検知")
                     await MainActor.run {
+                        // APIが100%未満の進捗を返しても表示を100%に揃える
+                        self.generationProgress = 1.0
+                        self.currentGeneratingPage = progress.totalPages
+                        self.totalPages = progress.totalPages
                         self.isGeneratingImages = false
                     }
                     self.progressPollingTask?.cancel()
                     
                     // 完了コールバックを実行
                     if let onCompleted = onCompleted {
+                        print("🚀 ImageGenerationProgressMonitor: onCompleted コールバックを実行します")
                         await onCompleted()
+                        print("✅ ImageGenerationProgressMonitor: onCompleted コールバック実行完了")
+                    } else {
+                        print("⚠️ ImageGenerationProgressMonitor: onCompleted コールバックが設定されていません")
                     }
                     break
-                } else if progress.status == "failed" {
+                } else if progress.status.lowercased() == "failed" {
                     await MainActor.run {
                         self.isGeneratingImages = false
                         self.errorMessage = "画像生成に失敗しました"
@@ -119,4 +135,3 @@ class ImageGenerationProgressMonitor: ObservableObject {
         progressPollingTask?.cancel()
     }
 }
-

@@ -7,12 +7,14 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
     let subTitle: String?
     let topContent: TopContent
     let footer: Footer
+    let isTextFieldFocused: FocusState<Bool>.Binding?
     
     init(
         title: String,
         options: [SelectOption],
         selection: Binding<String>,
         subTitle: String? = nil,
+        isTextFieldFocused: FocusState<Bool>.Binding? = nil,
         @ViewBuilder topContent: () -> TopContent,
         @ViewBuilder footer: () -> Footer
     ) {
@@ -20,6 +22,7 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
         self.options = options
         self._selection = selection
         self.subTitle = subTitle
+        self.isTextFieldFocused = isTextFieldFocused
         self.topContent = topContent()
         self.footer = footer()
     }
@@ -40,13 +43,18 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
                         // Select_Input_Boxコンポーネントを配置
                         Select_Input_Box(
                             options: options,
-                            answer: $selection
+                            answer: $selection,
+                            onTap: {
+                                // キーボードを閉じるためにフォーカスを解除
+                                isTextFieldFocused?.wrappedValue = false
+                            }
                         )
                         .frame(maxWidth: 360) // ここでセレクトボックスの最大幅を調整
                         // Select_Input_Boxコンポーネントの上にタイトルを配置
                         .overlay(alignment: .top) {
                             SubText(text: title)
                                 .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.horizontal, 4)  // 左右にパディングを追加して折り返しを促す
                                 .offset(y: -60)
                                 .padding(.bottom, 12)
                         }
@@ -72,7 +80,6 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .padding(.horizontal, 24) // ここでインナーカード内の左右の余白を調整
             }
             
             Spacer(minLength: 0)

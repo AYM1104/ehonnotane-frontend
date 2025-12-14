@@ -4,11 +4,13 @@ import Combine
 /// アプリの画面遷移状態を表すenum
 enum AppScreen {
     case top           // トップ画面（ログイン前）
+    case userRegister  // ユーザー登録画面（新規登録時）
     case uploadImage   // 画像アップロード画面（ログイン後）
     case childAndPageSelect  // お子さま・ページ選択画面
     case question      // 質問画面
     case themeSelect   // テーマ選択画面
     case storybook     // ストーリーブック表示画面
+    case myPage        // マイページ画面
 }
 
 /// アプリ全体の遷移状態を管理するコーディネーター
@@ -27,6 +29,15 @@ final class AppCoordinator: ObservableObject {
     
     /// ストーリーブックID
     @Published var storybookId: Int?
+    
+    /// 新規ユーザー登録画面に遷移
+    func navigateToUserRegister() {
+        isNavigatingAfterLogin = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.currentScreen = .userRegister
+            self?.isNavigatingAfterLogin = false
+        }
+    }
     
     /// ログイン成功時に画像アップロード画面に遷移
     func navigateToUploadImage() {
@@ -67,6 +78,13 @@ final class AppCoordinator: ObservableObject {
         self.storybookId = storybookId
         DispatchQueue.main.async { [weak self] in
             self?.currentScreen = .storybook
+        }
+    }
+    
+    /// マイページ画面に遷移
+    func navigateToMyPage() {
+        DispatchQueue.main.async { [weak self] in
+            self?.currentScreen = .myPage
         }
     }
     

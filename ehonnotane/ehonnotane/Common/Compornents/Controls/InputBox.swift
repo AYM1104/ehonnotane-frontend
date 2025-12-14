@@ -7,15 +7,19 @@ struct InputBox: View {
     let label: String?
     let placeholder: String
     @Binding private var text: String
+    let isTextFieldFocused: FocusState<Bool>.Binding?
+    @FocusState private var internalFocus: Bool
     
     init(
         label: String? = nil,
         placeholder: String = "",
-        text: Binding<String>
+        text: Binding<String>,
+        isFocused: FocusState<Bool>.Binding? = nil
     ) {
         self.label = label
         self.placeholder = placeholder
         _text = text
+        self.isTextFieldFocused = isFocused
     }
     
     var body: some View {
@@ -40,6 +44,7 @@ struct InputBox: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                     .frame(height: 52)
+                    .focused(isTextFieldFocused != nil ? isTextFieldFocused! : $internalFocus)
             }
             .frame(maxWidth: .infinity)
             .background(
@@ -79,7 +84,7 @@ struct InputBox: View {
 }
 
 /// SwiftUIプレビュー用ステートラッパー
-private struct StatefulPreviewWrapper<Value, Content: View>: View {
+struct StatefulPreviewWrapper<Value, Content: View>: View {
     @State private var value: Value
     private let content: (Binding<Value>) -> Content
     
@@ -92,4 +97,3 @@ private struct StatefulPreviewWrapper<Value, Content: View>: View {
         content($value)
     }
 }
-

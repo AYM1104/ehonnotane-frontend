@@ -58,8 +58,13 @@ struct Upload_Image_View: View {
                                 title: "これに けってい",
                                 fontSize: 18,
                                 action: {
-                                    Task {
-                                        await viewModel.uploadImage(image)
+                                    // プレビューでは実行されない
+                                    if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == nil {
+                                        Task {
+                                            await viewModel.uploadImage(image)
+                                        }
+                                    } else {
+                                        print("プレビューモード: アップロードは実行されません")
                                     }
                                 }
                             )
@@ -73,6 +78,7 @@ struct Upload_Image_View: View {
                                 title: "画像を選択する",
                                 fontSize: 20,
                                 action: {
+                                    // sheetを直接表示（SwiftUIが自動的にアニメーションを処理）
                                     showingImagePicker = true
                                 }
                             )
@@ -80,7 +86,7 @@ struct Upload_Image_View: View {
                         }
                     }
                 }
-                .padding(.bottom, -11)
+                .padding(.bottom, -10)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
 
@@ -97,21 +103,23 @@ struct Upload_Image_View: View {
             ImagePicker(
                 sourceType: .photoLibrary,
                 onImagePicked: { image in
+                    // 画像を設定（sheetは自動的に閉じる）
                     selectedImage = image
                     handleImageSelection(image)
                 },
                 onCancel: {
-                    // キャンセル時の処理があればここに記述
+                    // キャンセル時は何もしない（sheetは自動的に閉じる）
                 }
             )
             #endif
         }
         .onAppear {
-            // ViewModelを初期化
-            viewModel.configure(authManager: authManager)
-            
-            // 認証状態を確認
-            _ = viewModel.verifyAuthentication()
+            // ViewModelを初期化（プレビューでは実行されない）
+            // 実際のアプリ実行時のみ初期化を行う
+            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == nil {
+                viewModel.configure(authManager: authManager)
+                _ = viewModel.verifyAuthentication()
+            }
         }
         .onChange(of: authManager.isLoggedIn) { (oldValue: Bool, newValue: Bool) in
             // ログアウトされた場合、トップ画面に戻る（将来の実装用）
@@ -137,8 +145,10 @@ struct Upload_Image_View: View {
                 print("✅ アップロード成功")
                 print("   - 画像ID: \(result.imageId)")
                 print("   - 物語設定ID: \(result.storySettingId)")
-                // お子さま・ページ選択画面に遷移
-                coordinator.navigateToChildAndPageSelect(result: result)
+                // お子さま・ページ選択画面に遷移（プレビューでは実行されない）
+                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == nil {
+                    coordinator.navigateToChildAndPageSelect(result: result)
+                }
             }
         }
     }

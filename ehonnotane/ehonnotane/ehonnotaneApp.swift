@@ -17,6 +17,8 @@ struct ehonnotaneApp: App {
                 switch coordinator.currentScreen {
                 case .top:
                     Top_View()
+                case .userRegister:
+                    User_Register_View()
                 case .uploadImage:
                     Upload_Image_View()
                 case .childAndPageSelect:
@@ -50,6 +52,8 @@ struct ehonnotaneApp: App {
                                 coordinator.navigateToTop()
                             }
                     }
+                case .myPage:
+                    My_Page_View()
                 }
             }
             .environmentObject(coordinator)
@@ -65,8 +69,14 @@ struct ehonnotaneApp: App {
             .onChange(of: authManager.isLoggedIn) { (oldValue: Bool, newValue: Bool) in
                 // ログイン成功時に画像アップロード画面に遷移
                 if !oldValue && newValue {
-                    print("✅ App: ログイン成功を検知 - 画像アップロード画面に遷移します")
-                    coordinator.navigateToUploadImage()
+                    print("✅ App: ログイン成功を検知")
+                    if authManager.isNewUser {
+                        print("🆕 新規ユーザー -> 登録画面へ遷移")
+                        coordinator.navigateToUserRegister()
+                    } else {
+                        print("🔄 既存ユーザー -> 画像アップロード画面へ遷移")
+                        coordinator.navigateToUploadImage()
+                    }
                 }
             }
         }

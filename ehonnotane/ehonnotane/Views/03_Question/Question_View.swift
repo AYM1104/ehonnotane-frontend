@@ -31,7 +31,7 @@ struct Question_View: View {
             set: { self.viewModel.answers[question.field] = $0 }
         )
         
-        let submitAction: (() -> Void)? = isLast ? { viewModel.submitAnswers() } : nil
+        let submitAction: (() -> Void)? = isLast ? { viewModel.handleSubmitTapped() } : nil
         
         // 次の質問に進む処理（selectタイプの質問で、最後の質問でない場合のみ）
         let nextQuestionAction: (() -> Void)? = (question.type == "select" && !isLast) ? {
@@ -54,16 +54,15 @@ struct Question_View: View {
     
     var body: some View {
         ZStack(alignment: .top) {
+            
             // 背景
             Background {
                 BigCharacter()
             }
             
-            // ヘッダー
-            Header()
-            
             // メインコンテンツ
             VStack {
+                
                 // ヘッダーの高さ分のスペースを確保
                 Spacer()
                     .frame(height: 80)
@@ -73,9 +72,12 @@ struct Question_View: View {
                 MainText(text: "おしえてね！")
                 Spacer()
                 
-                // ガラス風カードを表示
+                // メインカード
                 mainCard(width: .screen95) {
-                    VStack {
+                    
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        
                         // 1ページ = 1枚のカード（SelectInputBoxCardまたはInputBoxCardを使用）
                         PageSlider(questionPages, currentIndex: $viewModel.currentQuestionIndex) { page in
                             QuestionPageComponent(
@@ -91,6 +93,10 @@ struct Question_View: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .onChange(of: viewModel.currentQuestionIndex) { _ in
+                            // ページが変更された時にキーボードを閉じる
+                            isTextFieldFocused = false
+                        }
                         
                         // ドットプログレスバー
                         ProgressBar(
@@ -99,13 +105,16 @@ struct Question_View: View {
                             dotSize: 10,
                             spacing: 12
                         )
+                        .padding(.bottom, 16)
 
                         
-                        Spacer()
+                        Spacer(minLength: 0)
                     }
                 }
                 .padding(.bottom, -10)
             }
+            // ヘッダー
+            Header()
             
             // 回答送信中のローディング表示
             if viewModel.isSubmitting || viewModel.isLoadingQuestions {
@@ -244,11 +253,9 @@ struct Question_View_Preview: View {
                 BigCharacter()
             }
             
-            // ヘッダー
-            Header()
-            
             // メインコンテンツ
             VStack {
+                
                 // ヘッダーの高さ分のスペースを確保
                 Spacer()
                     .frame(height: 80)
@@ -260,7 +267,9 @@ struct Question_View_Preview: View {
                 
                 // ガラス風カードを表示
                 mainCard(width: .screen95) {
-                    VStack {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        
                         // 1ページ = 1枚のカード（SelectInputBoxCardまたはInputBoxCardを使用）
                         PageSlider(questionPages, currentIndex: $viewModel.currentQuestionIndex) { page in
                             QuestionPageComponent(
@@ -284,13 +293,16 @@ struct Question_View_Preview: View {
                             dotSize: 10,
                             spacing: 12
                         )
+                        .padding(.bottom, 16)
 
                         
-                        Spacer()
+                        Spacer(minLength: 0)
                     }
                 }
                 .padding(.bottom, -10)
             }
+            // ヘッダー
+            Header()
         }
     }
 }

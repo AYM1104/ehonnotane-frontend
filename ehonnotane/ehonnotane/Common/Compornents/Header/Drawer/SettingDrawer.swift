@@ -5,6 +5,7 @@ struct SettingDrawer: View {
     @Binding var isPresented: Bool
     var headerHeight: CGFloat? = nil
     @State private var slideIn: Bool = false
+    @EnvironmentObject var coordinator: AppCoordinator
     
     var body: some View {
         GeometryReader { geometry in
@@ -77,7 +78,17 @@ struct SettingDrawer: View {
                                 title: "マイページ",
                                 icon: Image("icon-face")
                             ) {
-                                // TODO: マイページへ遷移
+                                // ドロワーを閉じてからマイページへ遷移
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                    slideIn = false
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                        isPresented = false
+                                    }
+                                    // マイページへ遷移
+                                    coordinator.navigateToMyPage()
+                                }
                             }
                             DrawerItemRow(
                                 title: "利用規約",
@@ -146,6 +157,7 @@ struct SettingDrawer: View {
             headerHeight: 80
         )
         .frame(maxWidth: .infinity, alignment: .trailing) // 右寄せ
+        .environmentObject(AppCoordinator())
     }
 }
 

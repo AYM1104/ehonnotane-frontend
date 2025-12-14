@@ -20,6 +20,7 @@ struct My_Page_View: View {
             
             // メインコンテンツ
             VStack {
+
                 // ヘッダーの高さ分のスペースを確保
                 Spacer()
                     .frame(height: 80)
@@ -234,26 +235,27 @@ struct My_Page_View: View {
                     .padding(.horizontal, 24)
                 }
                 }
+                // ヘッダー
+                Header()
                 
                 // アカウント削除ボタン
-                Spacer()
-                    .frame(height: 40)
+                // Spacer()
+                //     .frame(height: 40)
                 
-                Button(action: {
-                    showAccountDeletion = true
-                }) {
-                    Text("アカウント削除")
-                        .font(.system(size: 12))
-                        .foregroundColor(.red.opacity(0.7))
-                        .underline()
-                }
-                .padding(.bottom, 20)
-                .fullScreenCover(isPresented: $showAccountDeletion) {
-                    AccountDeletionView()
-                }
+                // Button(action: {
+                //     showAccountDeletion = true
+                // }) {
+                //     Text("アカウント削除")
+                //         .font(.system(size: 12))
+                //         .foregroundColor(.red.opacity(0.7))
+                //         .underline()
+                // }
+                // .padding(.bottom, 20)
+                // .fullScreenCover(isPresented: $showAccountDeletion) {
+                //     AccountDeletionView()
+                // }
             }
-             // ヘッダー
-             Header()
+             
         }
     }
     

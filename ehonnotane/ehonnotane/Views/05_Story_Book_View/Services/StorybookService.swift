@@ -278,6 +278,10 @@ extension StorybookService {
             throw error
         }
         
+        // 受信した生JSONをログ出力（デバッグ用）
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("📥 fetchGenerationProgress response: \(jsonString)")
+        }
         let decoder = JSONDecoder()
         return try decoder.decode(GenerationProgress.self, from: data)
     }
@@ -832,15 +836,20 @@ extension StorybookService {
             let storybookResponse = try await createStorybook(storyPlotId: storyResponse.storyPlotId, selectedTheme: storyResponse.selectedTheme, childId: childId, storyPages: storyPages)
             storybookId = storybookResponse.storybookId
             
-            // ステップ3: 画像生成
-            print("🎨 Step 3: Generating images...")
-            _ = try await generateStoryImages(storybookId: storybookResponse.storybookId)
+            // ステップ3: 画像生成はフロント側のポーリングに委ねるため、ここではキックだけ行い即返す
+            // バックグラウンドで画像生成→URL更新を行うが、UIの進捗アニメーションをブロックしない
+            print("🎨 Step 3: Generating images (kick only, no wait)...")
+            Task.detached(priority: .background) { [weak self] in
+                guard let self else { return }
+                do {
+                    _ = try await self.generateStoryImages(storybookId: storybookResponse.storybookId)
+                    _ = try await self.updateImageUrls(storybookId: storybookResponse.storybookId)
+                } catch {
+                    print("⚠️ Image generation (fire-and-forget) failed: \(error)")
+                }
+            }
             
-            // ステップ4: 画像URL更新
-            print("🔄 Step 4: Updating image URLs...")
-            _ = try await updateImageUrls(storybookId: storybookResponse.storybookId)
-            
-            print("✅ Theme selection flow completed successfully: storybookId=\(storybookResponse.storybookId)")
+            print("✅ Theme selection flow completed successfully (images are generating): storybookId=\(storybookResponse.storybookId)")
             return storybookResponse.storybookId
             
         } catch {

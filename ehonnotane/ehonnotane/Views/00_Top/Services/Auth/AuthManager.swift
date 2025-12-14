@@ -12,6 +12,7 @@ public class AuthManager: ObservableObject {
     @Published var currentProvider: AuthProviderType?
     @Published var errorMessage: String?
     @Published var isLoading = false
+    @Published var isNewUser = false
     
     // MARK: - ユーザー情報（ログイン結果から利用）
     @Published var userInfo: UserInfo?
@@ -57,15 +58,16 @@ public class AuthManager: ObservableObject {
             Task {
                 do {
                     // バックエンドと同期（ユーザー登録または取得）
-                    let _ = try await UserService.shared.syncUser(auth0User: userInfo)
+                    let (user, isNew) = try await UserService.shared.syncUser(auth0User: userInfo)
                     
                     await MainActor.run {
+                        self.isNewUser = isNew
                         self.isLoggedIn = true
                         self.currentProvider = result.provider
                         self.errorMessage = nil
                         self.userInfo = userInfo
                         self.isLoading = false
-                        print("✅ 認証・同期成功: \(result.provider.displayName)")
+                        print("✅ 認証・同期成功: \(result.provider.displayName), NewUser: \(isNew)")
                     }
                 } catch {
                     await MainActor.run {

@@ -18,6 +18,7 @@ struct Theme_Select_View: View {
 
             // メインコンテンツ           
             VStack {
+                
                 // ヘッダーの高さ分のスペースを確保
                 Spacer()
                     .frame(height: 80)
@@ -80,43 +81,49 @@ struct Theme_Select_View: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 
                                 // プログレスバーを表示
-                                if viewModel.isGeneratingImages {
-                                    // 画像生成中の進捗表示
-                                    VStack(spacing: 12) {
-                                        ProgressBar(
-                                            totalSteps: viewModel.totalSteps,
-                                            currentStep: viewModel.currentStep
-                                        )
-                                        .padding(.horizontal, 20)
-                                        
-                                        // 進捗メッセージ
-                                        SubText(
-                                            text: viewModel.stepMessage,
-                                            fontSize: 14
-                                        )
-                                        .foregroundColor(.secondary)
-                                        .padding(.horizontal, 20)
-                                    }
-                                } else {
-                                    // 通常のテーマ選択進捗
-                                    ProgressBar(
-                                        totalSteps: viewModel.themePages.count,
-                                        currentStep: currentPageIndex + 1
-                                    )
-                                    .padding(.horizontal, 20)
-                                }
+                                ProgressBar(
+                                    totalSteps: viewModel.themePages.count,
+                                    currentStep: currentPageIndex
+                                )
+                                .padding(.horizontal, 20)
                             }
                         }
                         
                         Spacer()
                     }
                 }
-                .padding(.bottom, -11)
+                .padding(.bottom, -10)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
 
             // ヘッダー
             Header()
+            
+            // クレジット不足モーダル
+            if viewModel.showCreditInsufficientModal {
+                CreditInsufficientModal(
+                    isPresented: $viewModel.showCreditInsufficientModal,
+                    requiredCredits: viewModel.requiredCredits,
+                    currentCredits: viewModel.currentCredits,
+                    onAddCredit: {
+                        // TODO: クレジットチャージ画面への遷移を実装
+                        print("クレジットチャージ画面へ遷移")
+                        // coordinator.navigateToCreditCharge() などを実装
+                    }
+                )
+            }
+            
+            // 生成中プログレスオーバーレイ
+            if viewModel.isGeneratingImages {
+                GenerationProgressView(
+                    progress: viewModel.progressPercentage,
+                    message: viewModel.stepMessage
+                )
+                .transition(.opacity)
+                .zIndex(100)
+                // プログレス値の変化をアニメーションさせる
+                .animation(.linear(duration: 1.5), value: viewModel.progressPercentage)
+            }
         }
         .onAppear {
             Task {

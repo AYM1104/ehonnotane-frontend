@@ -81,6 +81,35 @@ class QuestionViewModel: ObservableObject {
     var currentQuestions: [Question] {
         questionService.currentQuestions
     }
+
+    /// 最後の送信ボタンが押された時のチェック＆送信処理
+    func handleSubmitTapped() {
+        // 未回答の必須質問があればそのページに移動
+        if let missingIndex = firstUnansweredQuestionIndex() {
+            withAnimation {
+                currentQuestionIndex = missingIndex
+            }
+            return
+        }
+        
+        // すべて回答済みなら送信
+        submitAnswers()
+    }
+    
+    /// 未回答の必須質問のインデックスを返す（なければnil）
+    private func firstUnansweredQuestionIndex() -> Int? {
+        for (index, question) in currentQuestions.enumerated() {
+            // requiredがnilの場合は必須とみなす
+            let isRequired = question.required ?? true
+            guard isRequired else { continue }
+            
+            let value = answers[question.field]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if value.isEmpty {
+                return index
+            }
+        }
+        return nil
+    }
     
     // 回答を送信する関数
     func submitAnswers() {
@@ -91,7 +120,7 @@ class QuestionViewModel: ObservableObject {
         }
         
         print("🔄 回答送信処理を開始します")
-        loadingMessage = "送信中..."
+        loadingMessage = "回答を送信中..."
         isSubmitting = true
         
         Task {

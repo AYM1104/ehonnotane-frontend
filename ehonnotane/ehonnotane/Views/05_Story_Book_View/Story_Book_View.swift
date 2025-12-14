@@ -6,11 +6,18 @@ struct StoryBookView: View {
     @StateObject private var viewModel: BookFromAPIModel
     @State private var currentPageIndex: Int = 0
     
-    init(storybookId: Int) {
+    init(
+        storybookId: Int,
+        storybookService: StorybookService = .shared,
+        previewStorybook: StorybookResponse? = nil
+    ) {
         self.storybookId = storybookId
         self._viewModel = StateObject(
             wrappedValue: BookFromAPIModel(
                 storybookId: storybookId,
+                storybookService: storybookService,
+                previewStorybook: previewStorybook,
+                authManager: .shared,
                 onTitleUpdate: nil
             )
         )
@@ -19,20 +26,20 @@ struct StoryBookView: View {
     var body: some View {
         // ヘッダー
         ZStack(alignment: .top) {
+            
             // 背景
             Background {}
 
-            // ヘッダー
-            Header()
-
             // メインコンテンツ
-            VStack {
+            VStack(spacing: 0) {
+                
                 // ヘッダーの高さ分のスペースを確保
                 Spacer()
                     .frame(height: 80)
                 
                 // メインコンテンツ
-                VStack(spacing: 30) {
+                VStack(spacing: 4) {
+
                     // 絵本のタイトル
                     MainText(text: storyTitle)
                     
@@ -48,7 +55,6 @@ struct StoryBookView: View {
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                             } else if let errorMessage = viewModel.errorMessage {
                                 // エラー画面
                                 VStack(spacing: 20) {
@@ -72,10 +78,9 @@ struct StoryBookView: View {
                                     }
                                     .buttonStyle(.borderedProminent)
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                             } else if let story = viewModel.story {
                                 // 絵本表示画面
-                                VStack {
+                                VStack(spacing: 0) {
                                     if viewModel.isGeneratingImages {
                                         // 画像生成中の進捗表示
                                         VStack(spacing: 20) {
@@ -97,23 +102,27 @@ struct StoryBookView: View {
                                     Book(
                                         pages: viewModel.createBookPages(from: story),
                                         heightRatio: 1.0,
+                                        aspectRatio: 0.62, // Adjusted to be tall but fit within screen height
                                         cornerRadius: 30,
                                         paperColor: Color(red: 252/255, green: 252/255, blue: 252/255),
                                         onPageChange: { index in
                                             currentPageIndex = index
                                         }
                                     )
-                                    .padding(.horizontal, 10)
-                                    .opacity(viewModel.isGeneratingImages ? 0.7 : 1.0)
+                                    .padding(.horizontal, 0) // Reduced horizontal padding to widen the book
+                                    .padding(.top, 0) // Reduced top padding
+                                    
+                                    Spacer()
+                                        .frame(height: 8) // Reduced spacer height
+                                        .opacity(viewModel.isGeneratingImages ? 0.7 : 1.0)
                                     
                                     // プログレスバー
                                     ProgressBar(
                                         totalSteps: story.pages.count,
                                         currentStep: currentPageIndex
                                     )
-                                    .padding(.top, 16)
+                                    .padding(.top, 8) // Reduced top padding
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                             } else {
                                 // 初期状態
                                 VStack(spacing: 20) {
@@ -124,10 +133,8 @@ struct StoryBookView: View {
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .task {
                             // タイトル更新コールバックを設定
                             viewModel.onTitleUpdate = { title in
@@ -157,18 +164,20 @@ struct StoryBookView: View {
                         .cornerRadius(12)
                     }
                 }
-                
-                Spacer()
+                .padding(.top, 24)
             }
+
+            // ヘッダー
+            Header()
         }
     }
 }
 
-
-
 #Preview {
-    StoryBookView(storybookId: 1)
-        .environmentObject(AuthManager.shared)
-        .environmentObject(StorybookService.shared)
+    StoryBookView(
+        storybookId: 1,
+        previewStorybook: .previewSample
+    )
+    .environmentObject(AuthManager())
+    .environmentObject(StorybookService.shared)
 }
-

@@ -118,9 +118,9 @@ struct mainCard<Content: View>: View {
             content()
         }
         // パディング
-        .padding(.top, 16)      // pt-4
-        .padding(.horizontal, 16)  // px-4
-        .padding(.bottom, 16)   // pb-4
+        // .padding(.top, 16)      // pt-4
+        // .padding(.horizontal, 16)  // px-4
+        // .padding(.bottom, 16)   // pb-4
         
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .foregroundColor(labelColor)  // text-white

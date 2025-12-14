@@ -17,7 +17,7 @@ public struct BookRemoteImagePage: View {
     let placeholderBackground: Color
     let text: String?
     let textAreaHeight: CGFloat
-//    let authManager: AuthManager?
+    let authManager: AuthManager?
 
     public init(
         _ url: URL,
@@ -27,7 +27,7 @@ public struct BookRemoteImagePage: View {
         placeholderBackground: Color = Color.black.opacity(0.05),
         text: String? = nil,
         textAreaHeight: CGFloat = 120,
-//        authManager: AuthManager? = nil
+        authManager: AuthManager? = nil
     ) {
         self.url = url
         self.contentInset = contentInset
@@ -36,7 +36,7 @@ public struct BookRemoteImagePage: View {
         self.placeholderBackground = placeholderBackground
         self.text = text
         self.textAreaHeight = textAreaHeight
-//        self.authManager = authManager
+        self.authManager = authManager
     }
 
     public var body: some View {
@@ -47,7 +47,7 @@ public struct BookRemoteImagePage: View {
                 let imageHeight = geo.size.height
                 AuthenticatedAsyncImage(
                     url: url,
-//                    authManager: authManager,
+                    authManager: authManager,
                     fit: fit,
                     width: w,
                     height: imageHeight
@@ -90,13 +90,13 @@ private func convertToProxyURL(_ originalURL: URL) -> URL? {
     let urlString = originalURL.absoluteString
     
     // storage.googleapis.comのURLの場合のみプロキシエンドポイントに変換
-//    if urlString.contains("storage.googleapis.com") {
-//        let baseURL = APIConfig.shared.baseURL
-//        guard let encodedURL = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-//            return originalURL
-//        }
-//        return URL(string: "\(baseURL)/api/images/proxy?url=\(encodedURL)")
-//    }
+    if urlString.contains("storage.googleapis.com") {
+        let baseURL = APIConfig.shared.baseURL
+        guard let encodedURL = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            return originalURL
+        }
+        return URL(string: "\(baseURL)/api/images/proxy?url=\(encodedURL)")
+    }
     
     // それ以外のURLはそのまま返す
     return originalURL
@@ -106,7 +106,7 @@ private func convertToProxyURL(_ originalURL: URL) -> URL? {
 @available(iOS 15.0, macOS 12.0, *)
 struct AuthenticatedAsyncImage: View {
     let url: URL
-//    let authManager: AuthManager?
+    let authManager: AuthManager?
     let fit: BookRemoteImagePage.FitMode
     let width: CGFloat
     let height: CGFloat
@@ -165,14 +165,14 @@ struct AuthenticatedAsyncImage: View {
             request.httpMethod = "GET"
             
             // プロキシエンドポイント経由の場合は認証トークンを追加
-//            if imageURL.absoluteString.contains("/api/images/proxy"),
-////               let authManager = authManager,
-//               let token = authManager.getAccessToken() {
-//                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-//                print("🔐 プロキシ経由で画像を読み込み中: \(imageURL)")
-//            } else {
-//                print("📷 画像を読み込み中: \(imageURL)")
-//            }
+            if imageURL.absoluteString.contains("/api/images/proxy"),
+               let authManager = authManager,
+               let token = authManager.getAccessToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                print("🔐 プロキシ経由で画像を読み込み中: \(imageURL)")
+            } else {
+                print("📷 画像を読み込み中: \(imageURL)")
+            }
             
             let (data, response) = try await URLSession.shared.data(for: request)
             

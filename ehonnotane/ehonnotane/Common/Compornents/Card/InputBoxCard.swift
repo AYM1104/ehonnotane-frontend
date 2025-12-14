@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct InputBoxCard<TopContent: View, Footer: View>: View {
     let title: String
@@ -7,12 +8,14 @@ struct InputBoxCard<TopContent: View, Footer: View>: View {
     let subTitle: String?
     let topContent: TopContent
     let footer: Footer
+    let isTextFieldFocused: FocusState<Bool>.Binding?
     
     init(
         title: String,
         text: Binding<String>,
         placeholder: String = "ここに入力",
         subTitle: String? = nil,
+        isTextFieldFocused: FocusState<Bool>.Binding? = nil,
         @ViewBuilder topContent: () -> TopContent,
         @ViewBuilder footer: () -> Footer
     ) {
@@ -20,6 +23,7 @@ struct InputBoxCard<TopContent: View, Footer: View>: View {
         self._text = text
         self.placeholder = placeholder
         self.subTitle = subTitle
+        self.isTextFieldFocused = isTextFieldFocused
         self.topContent = topContent()
         self.footer = footer()
     }
@@ -38,16 +42,20 @@ struct InputBoxCard<TopContent: View, Footer: View>: View {
                     // InputBoxコンポーネントを配置
                     InputBox(
                         placeholder: placeholder,
-                        text: $text
+                        text: $text,
+                        isFocused: isTextFieldFocused
                     )
                     .frame(maxWidth: 360) // ここで入力ボックスの最大幅を調整
+
                     // InputBoxコンポーネントの上にタイトルを配置
                     .overlay(alignment: .top) {
                         SubText(text: title)
                             .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.horizontal, 4)  // 左右にパディングを追加して折り返しを促す
                             .offset(y: -60)
                             .padding(.bottom, 12)
                     }
+                    
                     // InputBoxコンポーネントの下にサブテキストを配置
                     .overlay(alignment: .bottom) {
                         if let subTitle = subTitle {
@@ -61,10 +69,28 @@ struct InputBoxCard<TopContent: View, Footer: View>: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 24) // ここでインナーカード内の左右の余白を調整
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // 背景をタップしたときにキーボードを閉じる
+                    if let isTextFieldFocused = isTextFieldFocused {
+                        isTextFieldFocused.wrappedValue = false
+                    } else {
+                        // isTextFieldFocusedがnilの場合は、UIApplicationを使ってキーボードを閉じる
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
             }
             
             Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // 外側の背景をタップしたときもキーボードを閉じる
+            if let isTextFieldFocused = isTextFieldFocused {
+                isTextFieldFocused.wrappedValue = false
+            } else {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
     }
 }

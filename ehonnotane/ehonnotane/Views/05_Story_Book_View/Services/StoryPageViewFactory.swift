@@ -4,17 +4,19 @@ import SwiftUI
 struct StoryPageViewFactory {
     /// StoryからBookページのビュー配列を生成
     /// - Parameter story: 絵本のストーリーデータ
+    /// - Parameter authManager: 認証マネージャー（画像読み込み用）
     /// - Returns: 各ページのビュー配列
-    static func createBookPages(from story: Story) -> [AnyView] {
+    static func createBookPages(from story: Story, authManager: AuthManager? = nil) -> [AnyView] {
         return story.pages.map { page in
-            createPageView(from: page)
+            createPageView(from: page, authManager: authManager)
         }
     }
     
     /// 単一のページからビューを生成
     /// - Parameter page: ページデータ
+    /// - Parameter authManager: 認証マネージャー
     /// - Returns: ページのビュー
-    private static func createPageView(from page: StoryPage) -> AnyView {
+    private static func createPageView(from page: StoryPage, authManager: AuthManager? = nil) -> AnyView {
         // 画像URLがある場合
         if let imageURLString = page.imageURL,
            let imageURL = URL(string: imageURLString) {
@@ -26,7 +28,8 @@ struct StoryPageViewFactory {
                         contentInset: 0,
                         fit: .fill,
                         text: "",  // 表紙はテキストなし
-                        textAreaHeight: 0
+                        textAreaHeight: 0,
+                        authManager: authManager
                     )
                 )
             } else {
@@ -37,7 +40,8 @@ struct StoryPageViewFactory {
                         contentInset: 0,
                         fit: .fill,
                         text: page.text,
-                        textAreaHeight: 150
+                        textAreaHeight: 150,
+                        authManager: authManager
                     )
                 )
             }

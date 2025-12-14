@@ -33,11 +33,16 @@ struct ImagePicker: UIViewControllerRepresentable {
         picker.sourceType = sourceType
         picker.delegate = context.coordinator
         picker.allowsEditing = false // 編集画面は不要
+        // SwiftUIのsheetが自動的にモーダルプレゼンテーションを処理するため、
+        // modalPresentationStyleは設定しない
         return picker
     }
     
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
-        // 更新処理は不要
+        // 初回表示時にupdateUIViewControllerが呼ばれることがあり、
+        // その際にsourceTypeやdelegateを変更すると、一度閉じてから再度表示される問題が発生する
+        // そのため、updateUIViewControllerでは何もしない
+        // makeUIViewControllerで既に正しく設定されているため、更新は不要
     }
     
     func makeCoordinator() -> Coordinator {
@@ -53,20 +58,34 @@ struct ImagePicker: UIViewControllerRepresentable {
             self.parent = parent
         }
         
-        func imagePickerController(
-            _ picker: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]
-        ) {
-            if let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage {
-                parent.onImagePicked(image)
-            }
-            picker.dismiss(animated: true)
-        }
+    func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]
+    ) {
+        // 画像を取得
+        let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
         
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.onCancel?()
-            picker.dismiss(animated: true)
+        // pickerを閉じる（SwiftUIのsheetも自動的に閉じる）
+        picker.dismiss(animated: true) {
+            // メインスレッドでコールバックを呼び出し
+            // dismiss完了後にコールバックを呼ぶことで、滑らかなアニメーションを保証
+            if let image = image {
+                DispatchQueue.main.async {
+                    self.parent.onImagePicked(image)
+                }
+            }
         }
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        // pickerを閉じる（SwiftUIのsheetも自動的に閉じる）
+        picker.dismiss(animated: true) {
+            // メインスレッドでコールバックを呼び出し
+            DispatchQueue.main.async {
+                self.parent.onCancel?()
+            }
+        }
+    }
     }
 }
 

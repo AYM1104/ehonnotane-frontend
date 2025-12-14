@@ -12,12 +12,15 @@ struct SelectOption: Identifiable {
 struct Select_Input_Box: View {
     let options: [SelectOption]
     @Binding var answer: String
+    var onTap: (() -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Menu {
                 ForEach(options, id: \.value) { option in
                     Button {
+                        // キーボードを閉じるためにフォーカスを解除
+                        onTap?()
                         // 保存するのはAPIが期待するvalue（英語コード）
                         answer = option.value
                     } label: {
@@ -59,12 +62,7 @@ struct Select_Input_Box: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(
-                            answer.isEmpty
-                            ? Color.gray.opacity(0.3)
-                            : Color(red: 54/255, green: 45/255, blue: 48/255).opacity(0.3),
-                            lineWidth: 1
-                        )
+                        .stroke(Color.white.opacity(0.25), lineWidth: 1)
                 )
             }
         }

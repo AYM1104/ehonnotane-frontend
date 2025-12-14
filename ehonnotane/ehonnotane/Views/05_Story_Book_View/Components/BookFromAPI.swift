@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import Foundation
 
 // MARK: - APIから取得した絵本データを表示するビュー
 
@@ -9,6 +10,7 @@ class BookFromAPIModel: ObservableObject {
     // storybookIdを動的に受け取る
     private let storybookId: Int
     private let storybookService: StorybookService
+    private let previewStorybook: StorybookResponse?
     private let authManager: AuthManager?  // ログインしていなくてもプレビューが見れるようにオプショナルに
     @Published var storybook: StorybookResponse?
     @Published var story: Story?
@@ -25,11 +27,13 @@ class BookFromAPIModel: ObservableObject {
     init(
         storybookId: Int,
         storybookService: StorybookService = .shared,
+        previewStorybook: StorybookResponse? = nil,
         authManager: AuthManager? = nil,
         onTitleUpdate: ((String) -> Void)? = nil
     ) {
         self.storybookId = storybookId
         self.storybookService = storybookService
+        self.previewStorybook = previewStorybook
         // ログインしていなくてもプレビューが見れるようにauthManagerをオプショナルに
         self.authManager = authManager
         self.onTitleUpdate = onTitleUpdate
@@ -45,6 +49,17 @@ class BookFromAPIModel: ObservableObject {
         DispatchQueue.main.async {
             self.isLoading = true
             self.errorMessage = nil
+        }
+        
+        // プレビュー専用のダミーデータがあればネットワーク通信をスキップ
+        if let previewStorybook, ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            await MainActor.run {
+                self.storybook = previewStorybook
+                self.story = Story(from: previewStorybook)
+                self.onTitleUpdate?(previewStorybook.title)
+                self.isLoading = false
+            }
+            return
         }
         
         do {
@@ -133,7 +148,7 @@ class BookFromAPIModel: ObservableObject {
     
     /// StoryからBookページを作成
     func createBookPages(from story: Story) -> [AnyView] {
-        return StoryPageViewFactory.createBookPages(from: story)
+        return StoryPageViewFactory.createBookPages(from: story, authManager: authManager)
     }
 }
 

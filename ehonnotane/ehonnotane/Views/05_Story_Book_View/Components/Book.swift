@@ -36,35 +36,54 @@ struct Book: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = width / aspectRatio
+        // heightRatio が 0 近傍でも破綻しないよう下限を設ける
+        let safeHeightRatio = max(heightRatio, 0.01)
+        let adjustedAspectRatio = aspectRatio / safeHeightRatio
+        
+        return VStack(spacing: 0) {
+            // aspectRatio 修飾子で高さを制御し、親ビューの幅に追従させる
+            PageCurl(pages: pages, currentIndex: $currentIndex)
+                .aspectRatio(adjustedAspectRatio, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .background(Color.clear)
+                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 5, y: 5)
+                .onChange(of: currentIndex) { newValue in
+                    onPageChange?(newValue)
+                }
             
-            VStack(spacing: 0) {
-                // 絵本本体 (PageCurlを使用)
-                PageCurl(pages: pages, currentIndex: $currentIndex)
-                    .frame(width: width, height: height)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                    .background(Color.clear)
-                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 5, y: 5)
-                    .onChange(of: currentIndex) { newValue in
-                        onPageChange?(newValue)
-                    }
-                
-                // ページインジケーターなどが必要な場合はここに追加
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            // ページインジケーターなどが必要な場合はここに追加
         }
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 }
 
 // MARK: - Preview
 
-#Preview("デモ絵本（ローカル）") {
+#Preview("デモ絵本（ヘッダー付き）") {
+    ZStack(alignment: .top) {
+        // アプリ全体と同じ星空背景
+        Background {}
+        
+        VStack(spacing: 0) {
+            Spacer()
+                .frame(height: 80) // ヘッダーぶんの余白
+            
     VStack(spacing: 12) {
         // 1) ローカル画像（SF Symbolsを使用）
-        let p1 = BookPage(Image(systemName: "hare.fill"), contentInset: 40, fit: BookPage.FitMode.fit, background: Color.white, text: "むかしむかし、あるところに、とてもかわいいうさぎがいました。")
-        let p2 = BookPage(Image(systemName: "tortoise.fill"), contentInset: 40, fit: BookPage.FitMode.fit, background: Color.white, text: "そのうさぎは、毎日森の中を散歩するのが大好きでした。")
+                let p1 = BookPage(
+                    Image(systemName: "hare.fill"),
+                    contentInset: 40,
+                    fit: BookPage.FitMode.fit,
+                    background: Color.white,
+                    text: "むかしむかし、あるところに、とてもかわいいうさぎがいました。"
+                )
+                let p2 = BookPage(
+                    Image(systemName: "tortoise.fill"),
+                    contentInset: 40,
+                    fit: BookPage.FitMode.fit,
+                    background: Color.white,
+                    text: "そのうさぎは、毎日森の中を散歩するのが大好きでした。"
+                )
 
         // 2) リモート画像（実行時に任意のURLへ差し替え推奨）
         let remotePages: [AnyView] = {
@@ -72,8 +91,22 @@ struct Book: View {
                 let u1 = URL(string: "https://picsum.photos/900/1600")!
                 let u2 = URL(string: "https://picsum.photos/1000/1600")!
                 return [
-                    AnyView(BookRemoteImagePage(u1, contentInset: 0, fit: BookRemoteImagePage.FitMode.fill, text: "ある日、うさぎは美しい花を見つけました。")),
-                    AnyView(BookRemoteImagePage(u2, contentInset: 0, fit: BookRemoteImagePage.FitMode.fill, text: "花は「こんにちは」と笑顔で言いました。"))
+                            AnyView(
+                                BookRemoteImagePage(
+                                    u1,
+                                    contentInset: 0,
+                                    fit: BookRemoteImagePage.FitMode.fill,
+                                    text: "ある日、うさぎは美しい花を見つけました。"
+                                )
+                            ),
+                            AnyView(
+                                BookRemoteImagePage(
+                                    u2,
+                                    contentInset: 0,
+                                    fit: BookRemoteImagePage.FitMode.fill,
+                                    text: "花は「こんにちは」と笑顔で言いました。"
+                                )
+                            )
                 ]
             } else {
                 return []
@@ -89,14 +122,12 @@ struct Book: View {
             cornerRadius: 30,
             paperColor: Color(red: 252/255, green: 252/255, blue: 252/255)
         )
-        .padding()
-        .background(
-            LinearGradient(
-                colors: [.indigo, .purple],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        )
+                .padding(.horizontal, 24)
+            }
+            .padding(.top, 24)
+        }
+        
+        // 既存アプリと同じヘッダー
+        Header()
     }
 }

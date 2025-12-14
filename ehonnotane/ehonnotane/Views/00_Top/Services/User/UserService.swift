@@ -75,7 +75,8 @@ class UserService: ObservableObject {
     
     /// Auth0のユーザー情報とバックエンドのユーザー情報を同期
     /// ユーザーが存在しない場合は新規作成する
-    func syncUser(auth0User: UserInfo) async throws -> User {
+    /// - Returns: (user: ユーザー情報, isNew: 新規作成されたかどうか)
+    func syncUser(auth0User: UserInfo) async throws -> (user: User, isNew: Bool) {
         await MainActor.run {
             self.isLoading = true
             self.errorMessage = nil
@@ -89,7 +90,8 @@ class UserService: ObservableObject {
         
         do {
             // 1. ユーザー取得を試みる
-            return try await fetchUser(userId: auth0User.id)
+            let user = try await fetchUser(userId: auth0User.id)
+            return (user, false)
         } catch let error as APIError {
             // 2. 404エラー（ユーザー未登録）の場合は新規作成
             if case .serverError(let code, _) = error, code == 404 {
@@ -110,7 +112,8 @@ class UserService: ObservableObject {
                     email: email
                 )
                 
-                return try await createUser(user: newUser)
+                let createdUser = try await createUser(user: newUser)
+                return (createdUser, true)
             }
             throw error
         } catch {

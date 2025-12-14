@@ -4,11 +4,23 @@ import SwiftUI
 struct InnerCard<Content: View>: View {
     private let backgroundColor: Color = Color.white.opacity(0.5)
     var cornerRadius: CGFloat = 35
+    var horizontalPadding: CGFloat = 48
+    var verticalPadding: CGFloat = 48
+    var outerPadding: CGFloat = 16  // 外側の余白
     private let content: () -> Content
     
     // 明示的イニシャライザ（@ViewBuilder 対応）
-    init(cornerRadius: CGFloat = 35, @ViewBuilder content: @escaping () -> Content) {
+    init(
+        cornerRadius: CGFloat = 35,
+        horizontalPadding: CGFloat = 48,
+        verticalPadding: CGFloat = 48,
+        outerPadding: CGFloat = 16,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.cornerRadius = cornerRadius
+        self.horizontalPadding = horizontalPadding
+        self.verticalPadding = verticalPadding
+        self.outerPadding = outerPadding
         self.content = content
     }
     
@@ -17,10 +29,14 @@ struct InnerCard<Content: View>: View {
             content()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.horizontal, horizontalPadding) // インナーカード内の左右の余白
+        .padding(.vertical, verticalPadding) // インナーカード内の上下の余白
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(backgroundColor)
+                // 外側の余白
+                .padding(EdgeInsets(top: outerPadding, leading: outerPadding, bottom: outerPadding, trailing: outerPadding))
         )
     }
 }
