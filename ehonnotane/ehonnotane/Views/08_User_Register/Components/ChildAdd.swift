@@ -67,8 +67,8 @@ struct ChildAdd: View {
                 .presentationDragIndicator(.visible)
                 .presentationDetents([.fraction(0.7)])
                 .presentationCornerRadius(32)
-                .interactiveDismissDisabled(true)
-                .presentationBackgroundInteraction(.disabled)
+                .interactiveDismissDisabled(false)
+                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.7)))
         }
     }
 
@@ -311,7 +311,7 @@ private struct ChildRow: View {
                 Text(entry.name)
                     .font(.custom("YuseiMagic-Regular", size: 16))
                     .foregroundColor(Color(hex: "362D30"))
-                Text("\(entry.birthdayText) / \(entry.ageText)")
+                Text("\(entry.birthdayText) \(entry.ageText)")
                     .font(.custom("YuseiMagic-Regular", size: 12))
                     .foregroundColor(Color(hex: "362D30").opacity(0.7))
             }

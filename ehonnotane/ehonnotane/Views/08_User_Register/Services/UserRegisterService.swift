@@ -9,7 +9,7 @@ struct UpdateUserRequest: Encodable {
 struct CreateChildRequest: Encodable {
     let user_id: String
     let name: String
-    let birthdate: String
+    let birthdate: String?
 }
 
 class UserRegisterService: ObservableObject {
@@ -61,16 +61,21 @@ class UserRegisterService: ObservableObject {
         let _: User = try await APIClient.shared.request(endpoint: endpoint, method: .put, body: body)
     }
     
+    /// 誕生日テキストをISO 8601形式に変換 ("yyyy/MM/dd" → "yyyy-MM-dd")
+    private func formatBirthdateForAPI(_ birthdayText: String) -> String? {
+        guard !birthdayText.isEmpty else { return nil }
+        return birthdayText.replacingOccurrences(of: "/", with: "-")
+    }
+    
     /// 子供を追加
     private func createChild(userId: String, child: ChildEntry) async throws {
         let endpoint = "/api/child/"
-        // birthdateは "yyyy/MM/dd" 形式でChildEntryに入っていると仮定
-        // APIが期待するフォーマットに合わせる必要があるが、APIClient側でJSONEncoderの設定による
-        // ここではそのまま文字列として送る
+        // birthdateを "yyyy/MM/dd" から "yyyy-MM-dd" (ISO 8601) 形式に変換
+        let formattedBirthdate = formatBirthdateForAPI(child.birthdayText)
         let body = CreateChildRequest(
             user_id: userId,
             name: child.name,
-            birthdate: child.birthdayText
+            birthdate: formattedBirthdate
         )
         
         // レスポンスの型はChildだが、ここでは使わないので破棄

@@ -6,6 +6,8 @@ struct MainText: View {
     let text: String
     // フォントサイズ（デフォルト: 28）
     var fontSize: CGFloat = 28
+    // フォント（デフォルト: YuseiMagic-Regular）
+    var font: Font? = nil
     // テキストカラー（デフォルト: 白）
     var color: Color = .white
     // 輝く効果を付けるか（デフォルト: true）
@@ -15,7 +17,7 @@ struct MainText: View {
     
     var body: some View {
         Text(text)
-            .font(.custom("YuseiMagic-Regular", size: fontSize))
+            .font(font ?? .custom("YuseiMagic-Regular", size: fontSize))
             .foregroundColor(color)
             .applyGlowEffect(enabled: glowEffect, color: color)
             .multilineTextAlignment(alignment)

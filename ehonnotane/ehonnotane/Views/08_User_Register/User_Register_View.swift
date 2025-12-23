@@ -146,9 +146,20 @@ struct User_Register_View: View {
             
             Task {
                 do {
+                    // ニックネームが空の場合はOAuth認証の表示名をフォールバックとして使用
+                    let nicknameToSave: String
+                    let trimmedNickname = userNickname.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmedNickname.isEmpty {
+                        // OAuth認証の表示名を使用（UserInfoのdisplayNameはname ?? email ?? "ユーザー"を返す）
+                        nicknameToSave = authManager.userInfo?.displayName ?? "ユーザー"
+                        print("ℹ️ ニックネーム未入力のため、OAuth表示名を使用: \(nicknameToSave)")
+                    } else {
+                        nicknameToSave = trimmedNickname
+                    }
+                    
                     try await registerService.registerUserAndChildren(
                         userId: userId,
-                        nickname: userNickname,
+                        nickname: nicknameToSave,
                         children: children
                     )
                     await MainActor.run {
