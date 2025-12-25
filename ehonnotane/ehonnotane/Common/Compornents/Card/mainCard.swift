@@ -29,14 +29,14 @@ struct mainCard<Content: View>: View {
     private let content: () -> Content
     /// 横幅タイプ
     private let width: CardWidth
-    /// 高さ
-    private let height: CGFloat
+    /// 高さ（nilの場合はコンテンツに応じて自動調整）
+    private let height: CGFloat?
     /// テキストカラー
     private let labelColor: Color
     
     init(
         width: CardWidth = .screen95,
-        height: CGFloat = 440,
+        height: CGFloat? = 440,
         labelColor: Color = .white,
         @ViewBuilder content: @escaping () -> Content
     ) {
@@ -50,18 +50,24 @@ struct mainCard<Content: View>: View {
         GeometryReader { geo in
             let cardWidth = width.maxWidth(in: geo.size.width)
             
-            glassBase
-                .overlay(contentArea)
-                .frame(maxWidth: cardWidth)
-                .frame(height: height)
-                .clipShape(RoundedRectangle(cornerRadius: 40))
-                .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 8)
-                .shadow(color: Color.white.opacity(0.3), radius: 15, x: 0, y: 0)
-                .shadow(color: Color(red: 102/255, green: 126/255, blue: 234/255).opacity(0.4), radius: 30, x: 0, y: 0)
-                .shadow(color: Color.white.opacity(0.2), radius: 45, x: 0, y: 0)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)  
+            cardContent(cardWidth: cardWidth)
         }
         .frame(height: height)
+    }
+    
+    /// カードコンテンツ
+    @ViewBuilder
+    private func cardContent(cardWidth: CGFloat) -> some View {
+        glassBase
+            .overlay(contentArea)
+            .frame(maxWidth: cardWidth)
+            .frame(height: height)
+            .clipShape(RoundedRectangle(cornerRadius: 40))
+            .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 8)
+            .shadow(color: Color.white.opacity(0.3), radius: 15, x: 0, y: 0)
+            .shadow(color: Color(red: 102/255, green: 126/255, blue: 234/255).opacity(0.4), radius: 30, x: 0, y: 0)
+            .shadow(color: Color.white.opacity(0.2), radius: 45, x: 0, y: 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
     
     /// ガラス風の土台
