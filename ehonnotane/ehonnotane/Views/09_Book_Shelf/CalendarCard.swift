@@ -1,8 +1,8 @@
 import SwiftUI
 
-// シンプルなサブカードコンポーネント
-// InnerCardと同じスタイルだが、セクション機能はない
-struct SubCard<Content: View>: View {
+/// カレンダー表示用のカードコンポーネント
+/// InnerCardと同じスタイルだが、セクション機能はない
+struct CalendarCard<Content: View>: View {
     let content: () -> Content
     let backgroundColor: Color
     let cornerRadius: CGFloat
@@ -47,7 +47,7 @@ struct SubCard<Content: View>: View {
             )
             .frame(maxWidth: .infinity, alignment: .top) // 上揃え
             
-            // 右下の三角形（クリック可能）
+            // 右下のchevronアイコン（クリック可能）
             if let onChevronTap = onChevronTap {
                 Button(action: onChevronTap) {
                     Image(systemName: isWeekMode ? "chevron.down" : "chevron.up")
@@ -75,7 +75,7 @@ struct SubCard<Content: View>: View {
     }
 }
 
-struct SubCard_Previews: PreviewProvider {
+struct CalendarCard_Previews: PreviewProvider {
     static var previews: some View {
         ZStack(alignment: .top) {
             // 背景
@@ -101,16 +101,16 @@ struct SubCard_Previews: PreviewProvider {
                 // ガラス風カードを表示
                 mainCard(width: .screen95) {
                     VStack(spacing: 16) {
-                        SubCard {
+                        CalendarCard {
                             // コンテンツ
                             VStack(spacing: 8) {
-                                SubText(text: "サブカード", fontSize: 18)
+                                SubText(text: "カレンダーカード", fontSize: 18)
                                 SubText(text: "ここにコンテンツが表示されます", fontSize: 18)
                             }
                         }
-                        .padding(.top, 4) // サブカード上部の余白
-                        .padding(.horizontal, 4) // サブカード左右の余白
-                        .padding(.bottom, 16) // サブカード下部の余白
+                        .padding(.top, 4) // カレンダーカード上部の余白
+                        .padding(.horizontal, 4) // カレンダーカード左右の余白
+                        .padding(.bottom, 16) // カレンダーカード下部の余白
                     }
                 }
                 .padding(.horizontal, 16) // パディングを減らしてカードを広く表示
