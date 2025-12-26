@@ -16,7 +16,7 @@ struct CalendarCard<Content: View>: View {
     init(
         backgroundColor: Color = Color.white.opacity(0.5),
         cornerRadius: CGFloat = 35,
-        horizontalPadding: CGFloat = 30,
+        horizontalPadding: CGFloat = 20,    // カード内側の左右の余白
         topPadding: CGFloat = 0,
         bottomPadding: CGFloat = 16,
         onChevronTap: (() -> Void)? = nil,

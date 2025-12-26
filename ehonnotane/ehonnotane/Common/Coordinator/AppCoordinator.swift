@@ -12,6 +12,7 @@ enum AppScreen {
     case storybook     // ストーリーブック表示画面
     case myPage        // マイページ画面
     case price         // 価格・プラン選択画面
+    case bookShelf     // 本棚画面
 }
 
 /// アプリ全体の遷移状態を管理するコーディネーター
@@ -103,6 +104,13 @@ final class AppCoordinator: ObservableObject {
             self?.uploadResult = nil
             self?.questionData = nil
             self?.storybookId = nil
+        }
+    }
+    
+    /// 本棚画面に遷移
+    func navigateToBookShelf() {
+        DispatchQueue.main.async { [weak self] in
+            self?.currentScreen = .bookShelf
         }
     }
 }

@@ -56,6 +56,8 @@ struct ehonnotaneApp: App {
                     My_Page_View2()
                 case .price:
                     PriceView()
+                case .bookShelf:
+                    BookShelfView()
                 }
             }
             .environmentObject(coordinator)

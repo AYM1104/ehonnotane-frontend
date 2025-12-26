@@ -204,6 +204,7 @@ struct StoryBookListItem: Codable, Identifiable {
     let id: Int
     let storyPlotId: Int
     let userId: String
+    let childId: Int?
     let title: String
     let coverImageUrl: String?
     let createdAt: String
@@ -213,6 +214,7 @@ struct StoryBookListItem: Codable, Identifiable {
         case id
         case storyPlotId = "story_plot_id"
         case userId = "user_id"
+        case childId = "child_id"
         case title
         case coverImageUrl = "cover_image_url"
         case createdAt = "created_at"

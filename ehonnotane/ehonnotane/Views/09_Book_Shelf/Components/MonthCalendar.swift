@@ -63,20 +63,26 @@ struct MonthCalendarView: View {
             // ホイールピッカー
             NavigationView {
                 VStack {
-                    DatePicker(
-                        "年月を選択",
-                        selection: Binding(
-                            get: { displayDate },
-                            set: { newDate in
-                                onDateChange(newDate)
-                                showDatePicker = false
-                            }
-                        ),
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.wheel)
-                    .environment(\.locale, Locale(identifier: "ja_JP"))
-                    .padding()
+                    HStack {
+                        Spacer()
+                        DatePicker(
+                            "", // ラベルは表示しない
+                            selection: Binding(
+                                get: { displayDate },
+                                set: { newDate in
+                                    onDateChange(newDate)
+                                    showDatePicker = false
+                                }
+                            ),
+                            displayedComponents: [.date]
+                        )
+                        .datePickerStyle(.wheel)
+                        .environment(\.locale, Locale(identifier: "ja_JP"))
+                        Spacer()
+                    }
+                    .padding(.leading)
+                    .padding(.trailing, 32) // 右側に追加の余白
+                    .padding(.vertical)
                     
                     Spacer()
                 }
@@ -212,7 +218,7 @@ struct DayView: View {
                     Circle()
                         .fill(Color(red: 20/255, green: 184/255, blue: 166/255))
                         .frame(width: 6, height: 6)
-                        .offset(y: 12) // 日付の下に配置
+                        .offset(y: 24) // サークルより下に配置
                 }
             }
         }

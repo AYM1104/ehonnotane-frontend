@@ -42,6 +42,10 @@ struct Header: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 32, height: 32)
                         .padding(.trailing, 8)
+                        .onTapGesture {
+                            // 本棚アイコンをタップしたら本棚ビューに遷移
+                            coordinator.navigateToBookShelf()
+                        }
                     
                     // 歯車アイコン
                     Image(systemName: "gearshape")
