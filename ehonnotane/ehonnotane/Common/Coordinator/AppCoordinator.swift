@@ -11,6 +11,7 @@ enum AppScreen {
     case themeSelect   // テーマ選択画面
     case storybook     // ストーリーブック表示画面
     case myPage        // マイページ画面
+    case price         // 価格・プラン選択画面
 }
 
 /// アプリ全体の遷移状態を管理するコーディネーター
@@ -85,6 +86,13 @@ final class AppCoordinator: ObservableObject {
     func navigateToMyPage() {
         DispatchQueue.main.async { [weak self] in
             self?.currentScreen = .myPage
+        }
+    }
+    
+    /// 価格・プラン選択画面に遷移
+    func navigateToPrice() {
+        DispatchQueue.main.async { [weak self] in
+            self?.currentScreen = .price
         }
     }
     

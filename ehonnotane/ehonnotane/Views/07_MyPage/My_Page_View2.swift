@@ -3,12 +3,13 @@ import SwiftUI
 struct My_Page_View2: View {
     // 環境オブジェクト
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var coordinator: AppCoordinator
     
     // ViewModel
     @StateObject private var viewModel = MyPageViewModel()
     
-    // 選択されたタブを管理
-    @State private var selectedTab: String = "あす"
+    // 選択されたタブを管理（子供の名前で管理）
+    @State private var selectedTab: String? = nil
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -22,13 +23,18 @@ struct My_Page_View2: View {
                     .frame(height: 80)
                 
                 // ユーザー名
-                UserNicknameDisplay(
-                    nickname: viewModel.username,
-                    onEditTap: {
-                        // 編集アクション
-                        print("編集ボタンがタップされました")
-                    }
-                )
+                if viewModel.isLoading {
+                    // ローディング中のスケルトン
+                    ShimmerSkeletonView()
+                } else {
+                    UserNicknameDisplay(
+                        nickname: viewModel.username,
+                        onEditTap: {
+                            // 編集アクション
+                            print("編集ボタンがタップされました")
+                        }
+                    )
+                }
                 
                 // ユーザーアイコン表示用のサークル
                 Circle()
@@ -63,8 +69,8 @@ struct My_Page_View2: View {
                     width: nil, // 幅を自動調整
                     fontName: nil, // SFPro（システムフォント）を使用
                     action: {
-                        // クレジット追加アクション
-                        print("クレジットを追加するボタンがタップされました")
+                        // 価格・プラン選択画面に遷移
+                        coordinator.navigateToPrice()
                     }
                 )
                 .fixedSize() // テキストに合わせた幅に調整
@@ -126,32 +132,27 @@ struct My_Page_View2: View {
                     VStack(spacing: 0) {
                         // タブセクション
                         HStack(spacing: 0) {
-                            // タブ1：あす
-                            TabItem(
-                                title: "あす",
-                                isSelected: selectedTab == "あす",
-                                action: {
-                                    selectedTab = "あす"
+                            if !viewModel.children.isEmpty {
+                                // 子供が登録されている場合：子供の名前に基づいてタブを動的に生成
+                                ForEach(viewModel.children) { child in
+                                    TabItem(
+                                        title: child.name,
+                                        isSelected: selectedTab == child.name,
+                                        action: {
+                                            selectedTab = child.name
+                                        }
+                                    )
                                 }
-                            )
-                            
-                            // タブ2：ゆき
-                            TabItem(
-                                title: "ゆき",
-                                isSelected: selectedTab == "ゆき",
-                                action: {
-                                    selectedTab = "ゆき"
-                                }
-                            )
-                            
-                            // タブ3：たろ
-                            TabItem(
-                                title: "たろ",
-                                isSelected: selectedTab == "たろ",
-                                action: {
-                                    selectedTab = "たろ"
-                                }
-                            )
+                            } else {
+                                // 子供が登録されていない場合：ユーザー名をタブに表示
+                                TabItem(
+                                    title: viewModel.username,
+                                    isSelected: selectedTab == viewModel.username,
+                                    action: {
+                                        selectedTab = viewModel.username
+                                    }
+                                )
+                            }
                         }
                         .padding(.horizontal, 24)
                         .padding(.top, 24)
@@ -183,6 +184,28 @@ struct My_Page_View2: View {
             // ユーザー情報を取得
             Task {
                 await viewModel.loadUserInfo()
+                // 初期状態でタブを選択
+                if selectedTab == nil {
+                    if !viewModel.children.isEmpty {
+                        // 子供が登録されている場合：最初の子供の名前を選択
+                        selectedTab = viewModel.children[0].name
+                    } else {
+                        // 子供が登録されていない場合：ユーザー名を選択
+                        selectedTab = viewModel.username
+                    }
+                }
+            }
+        }
+        .onChange(of: viewModel.children) {
+            // 子供のリストが変更されたとき、タブを選択
+            if selectedTab == nil {
+                if !viewModel.children.isEmpty {
+                    // 子供が登録されている場合：最初の子供の名前を選択
+                    selectedTab = viewModel.children[0].name
+                } else {
+                    // 子供が登録されていない場合：ユーザー名を選択
+                    selectedTab = viewModel.username
+                }
             }
         }
     }
@@ -239,6 +262,41 @@ struct My_Page_View2: View {
             .fill(Color.gray.opacity(0.3))
             .frame(width: 90, height: 120)
             .cornerRadius(8)
+    }
+    
+    // MARK: - スケルトンローディング
+    
+    @ViewBuilder
+    private func ShimmerSkeletonView() -> some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color.white.opacity(0.2))
+            .frame(width: 120, height: 24)
+            .shimmer()
+    }
+}
+
+// MARK: - シャイマーエフェクト
+
+extension View {
+    func shimmer() -> some View {
+        self.modifier(ShimmerModifier())
+    }
+}
+
+struct ShimmerModifier: ViewModifier {
+    @State private var opacity: Double = 0.3
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(
+                    Animation.easeInOut(duration: 1.0)
+                        .repeatForever(autoreverses: true)
+                ) {
+                    opacity = 0.6
+                }
+            }
     }
 }
 

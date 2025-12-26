@@ -1,7 +1,10 @@
 import SwiftUI
 
 // ヘッダーコンポーネント
-struct Header: View {   
+struct Header: View {
+    // 環境オブジェクト
+    @EnvironmentObject var coordinator: AppCoordinator
+    
     // 設定ドロワーの表示状態
     @State private var isSettingPresented: Bool = false
     
@@ -12,7 +15,7 @@ struct Header: View {
                 
                 HStack(spacing: 12) {
 
-                    // ヘッダーロゴ＋アプリタイトル
+                    // ヘッダーロゴ＋アプリタイトル（タップ可能）
                     HStack(spacing: 12) {
                         Image("header-logo")
                             .resizable()
@@ -24,6 +27,10 @@ struct Header: View {
                             .font(.custom("YuseiMagic-Regular", size: 20))
                             .fontWeight(.bold)
                             .foregroundColor(.white)
+                    }
+                    .onTapGesture {
+                        // ロゴとアプリタイトルをタップしたらUpload_Imageビューに遷移
+                        coordinator.navigateToUploadImage()
                     }
                     
                     Spacer()
@@ -95,5 +102,6 @@ struct Header: View {
         
         // ヘッダー
         Header()
+            .environmentObject(AppCoordinator())
     }
 }

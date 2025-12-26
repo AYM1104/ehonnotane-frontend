@@ -53,7 +53,9 @@ struct ehonnotaneApp: App {
                             }
                     }
                 case .myPage:
-                    My_Page_View()
+                    My_Page_View2()
+                case .price:
+                    PriceView()
                 }
             }
             .environmentObject(coordinator)

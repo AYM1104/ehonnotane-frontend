@@ -3,7 +3,7 @@ import Combine
 
 
 // 子供のモデル
-struct Child: Codable, Identifiable {
+struct Child: Codable, Identifiable, Equatable {
     let id: Int
     let user_id: String
     let name: String

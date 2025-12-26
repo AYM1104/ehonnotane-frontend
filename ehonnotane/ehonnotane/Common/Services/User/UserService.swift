@@ -17,12 +17,20 @@ class UserService: ObservableObject {
     
     private init() {}
     
+    /// ユーザー情報を取得
+    /// - Parameter userId: ユーザーID
     func fetchUser(userId: String) async throws -> User {
         let user = try await fetchService.fetchUser(userId: userId)
         await MainActor.run {
             self.currentUser = user
         }
         return user
+    }
+    
+    /// ユーザー情報を更新（イベントベースの更新で使用）
+    /// クレジット追加後、プロフィール編集後など、データが変更される可能性があるタイミングで呼び出す
+    func refreshUser(userId: String) async throws -> User {
+        return try await fetchUser(userId: userId)
     }
     
     func createUser(user: UserCreateRequest) async throws -> User {
