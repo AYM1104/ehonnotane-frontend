@@ -5,6 +5,7 @@ import UIKit
 // 1) 最小の PageCurl ラッパー（背景/ダブルサイドをシンプルに）
 struct SimplePageCurl<Content: View>: UIViewControllerRepresentable {
     var pages: [Content]
+    @Binding var currentIndex: Int  // 現在のページインデックスを追跡
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -13,6 +14,7 @@ struct SimplePageCurl<Content: View>: UIViewControllerRepresentable {
                                        navigationOrientation: .horizontal,
                                        options: nil)
         pvc.dataSource = context.coordinator
+        pvc.delegate = context.coordinator  // デリゲートを設定してページ変更を検知
         pvc.view.backgroundColor = .systemBackground
         context.coordinator.controllers = pages.map {
             let host = UIHostingController(rootView: $0.ignoresSafeArea())
@@ -27,7 +29,7 @@ struct SimplePageCurl<Content: View>: UIViewControllerRepresentable {
 
     func updateUIViewController(_ pvc: UIPageViewController, context: Context) {}
 
-    final class Coordinator: NSObject, UIPageViewControllerDataSource {
+    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: SimplePageCurl
         var controllers: [UIViewController] = []
         init(_ parent: SimplePageCurl) { self.parent = parent }
@@ -41,6 +43,18 @@ struct SimplePageCurl<Content: View>: UIViewControllerRepresentable {
                                 viewControllerAfter vc: UIViewController) -> UIViewController? {
             guard let i = controllers.firstIndex(of: vc), i + 1 < controllers.count else { return nil }
             return controllers[i + 1]
+        }
+        
+        // ページ変更が完了したときに currentIndex を更新
+        func pageViewController(_ pageViewController: UIPageViewController,
+                               didFinishAnimating finished: Bool,
+                               previousViewControllers: [UIViewController],
+                               transitionCompleted completed: Bool) {
+            if completed,
+               let currentVC = pageViewController.viewControllers?.first,
+               let index = controllers.firstIndex(of: currentVC) {
+                parent.currentIndex = index
+            }
         }
     }
 }
@@ -60,13 +74,15 @@ struct DemoPage: View {
 
 // 3) 実行ビュー：右端/左端をスワイプしてめくる
 struct MinimalPageCurlDemo: View {
+    @State private var currentIndex = 0
+    
     var body: some View {
         SimplePageCurl(pages: [
             DemoPage(number: 1),
             DemoPage(number: 2),
             DemoPage(number: 3),
             DemoPage(number: 4)
-        ])
+        ], currentIndex: $currentIndex)
         .navigationBarBackButtonHidden(true) // 戻るスワイプと競合しないように
     }
 }
@@ -82,10 +98,7 @@ public struct PageCurl: View {
     }
     
     public var body: some View {
-        SimplePageCurl<AnyView>(pages: pages)
-            .onAppear {
-                // 初期インデックスを設定（必要に応じて実装）
-            }
+        SimplePageCurl<AnyView>(pages: pages, currentIndex: $currentIndex)
     }
 }
 

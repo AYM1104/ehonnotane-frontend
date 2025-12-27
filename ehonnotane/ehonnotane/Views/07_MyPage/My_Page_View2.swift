@@ -264,37 +264,30 @@ struct My_Page_View2: View {
             .cornerRadius(8)
     }
     
-    // MARK: - スケルトンローディング
+    // MARK: - スケルトンローディング（テーマ選択ビューと同じスタイル）
     
     @ViewBuilder
     private func ShimmerSkeletonView() -> some View {
-        RoundedRectangle(cornerRadius: 8)
-            .fill(Color.white.opacity(0.2))
-            .frame(width: 120, height: 24)
-            .shimmer()
+        SkeletonShimmerView()
     }
 }
 
-// MARK: - シャイマーエフェクト
+// MARK: - スケルトンシマービュー（テーマ選択ビューと同じスタイル）
 
-extension View {
-    func shimmer() -> some View {
-        self.modifier(ShimmerModifier())
-    }
-}
-
-struct ShimmerModifier: ViewModifier {
-    @State private var opacity: Double = 0.3
+struct SkeletonShimmerView: View {
+    @State private var isAnimating = false
     
-    func body(content: Content) -> some View {
-        content
-            .opacity(opacity)
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color.gray.opacity(0.3))
+            .frame(width: 120, height: 24)
+            .shimmer(isAnimating: isAnimating)
             .onAppear {
                 withAnimation(
-                    Animation.easeInOut(duration: 1.0)
-                        .repeatForever(autoreverses: true)
+                    Animation.linear(duration: 1.5)
+                        .repeatForever(autoreverses: false)
                 ) {
-                    opacity = 0.6
+                    isAnimating = true
                 }
             }
     }
