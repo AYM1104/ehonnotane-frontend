@@ -33,6 +33,9 @@ class ThemeSelectViewModel: ObservableObject {
     // 段階的に進捗を上げるためのタスク
     private var progressStepperTask: Task<Void, Never>?
     
+    // クリーンアップ用: story_setting_idを保持
+    @Published var storySettingId: Int? = nil
+    
     // MARK: - Methods
     
     func loadThemeData(coordinator: AppCoordinator) async {
@@ -55,10 +58,11 @@ class ThemeSelectViewModel: ObservableObject {
             print("✅ ThemeSelectViewModel: ユーザーID取得OK - userId: \(userId)")
             
             // 最新のstory_setting_idを取得
-            let storySettingId = try await storybookService.fetchLatestStorySettingId(userId: userId)
+            let fetchedStorySettingId = try await storybookService.fetchLatestStorySettingId(userId: userId)
+            self.storySettingId = fetchedStorySettingId // クリーンアップ用に保存
             
             // テーマプロット一覧を取得
-            let themePlotsResponse = try await storybookService.fetchThemePlots(userId: userId, storySettingId: storySettingId, limit: 3)
+            let themePlotsResponse = try await storybookService.fetchThemePlots(userId: userId, storySettingId: fetchedStorySettingId, limit: 3)
             
             // ThemePlotResponseからThemePageに変換
             themePages = themePlotsResponse.items.map { ThemePage(from: $0) }

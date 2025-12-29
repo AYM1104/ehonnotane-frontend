@@ -14,6 +14,13 @@ struct Child_and_Page_Selection_View: View {
     @State private var errorMessage: String = ""
     @State private var initialDataLoaded: Bool = false
     
+    // ナビゲーション確認用
+    @State private var showNavigationAlert: Bool = false
+    @State private var pendingNavigationAction: (() -> Void)? = nil
+    
+    // クリーンアップサービス
+    private let cleanupService = StorySettingCleanupService()
+    
     var body: some View {
         ZStack(alignment: .top) {
 
@@ -36,6 +43,19 @@ struct Child_and_Page_Selection_View: View {
             Button("OK") { }
         } message: {
             Text(errorMessage)
+        }
+        // ナビゲーション確認アラート
+        .alert("確認", isPresented: $showNavigationAlert) {
+            Button("キャンセル", role: .cancel) {
+                pendingNavigationAction = nil
+            }
+            Button("OK", role: .destructive) {
+                Task {
+                    await performCleanupAndNavigate()
+                }
+            }
+        } message: {
+            Text("これまでの操作が保存されずに画面が移動します。よろしいですか？")
         }
     }
     
@@ -118,8 +138,12 @@ struct Child_and_Page_Selection_View: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         
-        // ヘッダー
-        Header()
+        // ヘッダー（ナビゲーション確認コールバック付き）
+        Header(
+            onLogoTap: { handleNavigationAttempt { coordinator.navigateToUploadImage() } },
+            onBookShelfTap: { handleNavigationAttempt { coordinator.navigateToBookShelf() } },
+            onMyPageTap: { handleNavigationAttempt { coordinator.navigateToMyPage() } }
+        )
         
         // モーダル表示
         if showingCreditAlert {
@@ -139,7 +163,42 @@ struct Child_and_Page_Selection_View: View {
     private func loadInitialData() async {
         guard !initialDataLoaded else { return }
         await viewModel.loadChildren()
+        // story_setting_idを設定（uploadResultから取得）
+        if let storySettingId = uploadResult?.storySettingId {
+            viewModel.storySettingId = storySettingId
+        }
         initialDataLoaded = true
+    }
+    
+    // MARK: - Navigation Handling
+    
+    /// ナビゲーション試行をハンドルし、確認アラートを表示
+    private func handleNavigationAttempt(_ action: @escaping () -> Void) {
+        pendingNavigationAction = action
+        showNavigationAlert = true
+    }
+    
+    /// クリーンアップを実行してからナビゲーション
+    private func performCleanupAndNavigate() async {
+        guard let storySettingId = viewModel.storySettingId else {
+            print("⚠️ story_setting_idが見つかりません。クリーンアップをスキップします")
+            pendingNavigationAction?()
+            pendingNavigationAction = nil
+            return
+        }
+        
+        do {
+            print("🗑️ Story Setting削除開始: ID=\(storySettingId)")
+            _ = try await cleanupService.deleteStorySetting(storySettingId: storySettingId)
+            print("✅ Story Setting削除完了")
+        } catch {
+            print("❌ Story Setting削除エラー: \(error)")
+            // エラーでも遷移は実行（ユーザーの意図を尊重）
+        }
+        
+        // 保留中のナビゲーションアクションを実行
+        pendingNavigationAction?()
+        pendingNavigationAction = nil
     }
 }
 

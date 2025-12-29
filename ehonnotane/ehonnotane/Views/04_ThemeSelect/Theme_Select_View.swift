@@ -9,6 +9,13 @@ struct Theme_Select_View: View {
     
     @State private var currentPageIndex = 0
     
+    // ナビゲーション確認用
+    @State private var showNavigationAlert: Bool = false
+    @State private var pendingNavigationAction: (() -> Void)? = nil
+    
+    // クリーンアップサービス
+    private let cleanupService = StorySettingCleanupService()
+    
     var body: some View {
         ZStack(alignment: .top) {
             // 背景
@@ -90,8 +97,12 @@ struct Theme_Select_View: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
 
-            // ヘッダー
-            Header()
+            // ヘッダー（ナビゲーション確認コールバック付き）
+            Header(
+                onLogoTap: { handleNavigationAttempt { coordinator.navigateToUploadImage() } },
+                onBookShelfTap: { handleNavigationAttempt { coordinator.navigateToBookShelf() } },
+                onMyPageTap: { handleNavigationAttempt { coordinator.navigateToMyPage() } }
+            )
             
             // クレジット不足モーダル
             if viewModel.showCreditInsufficientModal {
@@ -124,6 +135,50 @@ struct Theme_Select_View: View {
                 await viewModel.loadThemeData(coordinator: coordinator)
             }
         }
+        // ナビゲーション確認アラート
+        .alert("確認", isPresented: $showNavigationAlert) {
+            Button("キャンセル", role: .cancel) {
+                pendingNavigationAction = nil
+            }
+            Button("OK", role: .destructive) {
+                Task {
+                    await performCleanupAndNavigate()
+                }
+            }
+        } message: {
+            Text("これまでの操作が保存されずに画面が移動します。よろしいですか？")
+        }
+    }
+    
+    // MARK: - Navigation Handling
+    
+    /// ナビゲーション試行をハンドルし、確認アラートを表示
+    private func handleNavigationAttempt(_ action: @escaping () -> Void) {
+        pendingNavigationAction = action
+        showNavigationAlert = true
+    }
+    
+    /// クリーンアップを実行してからナビゲーション
+    private func performCleanupAndNavigate() async {
+        guard let storySettingId = viewModel.storySettingId else {
+            print("⚠️ story_setting_idが見つかりません。クリーンアップをスキップします")
+            pendingNavigationAction?()
+            pendingNavigationAction = nil
+            return
+        }
+        
+        do {
+            print("🗑️ Story Setting削除開始: ID=\(storySettingId)")
+            _ = try await cleanupService.deleteStorySetting(storySettingId: storySettingId)
+            print("✅ Story Setting削除完了")
+        } catch {
+            print("❌ Story Setting削除エラー: \(error)")
+            // エラーでも遷移は実行（ユーザーの意図を尊重）
+        }
+        
+        // 保留中のナビゲーションアクションを実行
+        pendingNavigationAction?()
+        pendingNavigationAction = nil
     }
 }
 

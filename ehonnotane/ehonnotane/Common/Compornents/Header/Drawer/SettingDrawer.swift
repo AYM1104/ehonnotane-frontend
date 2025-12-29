@@ -7,6 +7,9 @@ struct SettingDrawer: View {
     @State private var slideIn: Bool = false
     @EnvironmentObject var coordinator: AppCoordinator
     
+    // ナビゲーション割り込み用のコールバック（オプショナル）
+    var onMyPageTap: (() -> Void)? = nil
+    
     var body: some View {
         GeometryReader { geometry in
             let availableHeight = max(geometry.size.height - (headerHeight ?? 0), 0)
@@ -78,16 +81,30 @@ struct SettingDrawer: View {
                                 title: "マイページ",
                                 icon: Image("icon-face")
                             ) {
-                                // ドロワーを閉じてからマイページへ遷移
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
-                                    slideIn = false
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                // コールバックが提供されている場合はそれを呼び出し、なければ直接遷移
+                                if let onMyPageTap = onMyPageTap {
+                                    // ドロワーを閉じてからコールバック実行
                                     withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
-                                        isPresented = false
+                                        slideIn = false
                                     }
-                                    // マイページへ遷移
-                                    coordinator.navigateToMyPage()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                            isPresented = false
+                                        }
+                                        onMyPageTap()
+                                    }
+                                } else {
+                                    // ドロワーを閉じてからマイページへ遷移
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                        slideIn = false
+                                    }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                            isPresented = false
+                                        }
+                                        // マイページへ遷移
+                                        coordinator.navigateToMyPage()
+                                    }
                                 }
                             }
                             DrawerItemRow(

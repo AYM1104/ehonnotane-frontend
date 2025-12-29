@@ -132,9 +132,23 @@ struct StorybookListView: View {
             
             // 絵本一覧（常に表示）
             if isLoading {
-                ProgressView()
-                    .padding()
-                    .frame(maxHeight: availableHeight)
+                // スケルトンローディング風のUI
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(0..<3) { index in
+                            SkeletonStorybookItemView()
+                            
+                            if index != 2 {
+                                Divider()
+                                    .background(Color.gray.opacity(0.3))
+                            }
+                        }
+                    }
+                    .padding(.leading, 8)
+                    .padding(.trailing, 8)
+                    .padding(.vertical, 16)
+                }
+                .frame(maxHeight: availableHeight)
             } else if storybooks.isEmpty {
                 Text(selectedDate == nil ? "絵本がありません" : "この日に作成した絵本はありません")
                     .font(.custom("YuseiMagic-Regular", size: 14))
@@ -555,3 +569,54 @@ struct StorybookListItemView: View {
     }
 }
 
+/// スケルトン（ローディング中）の絵本リストアイテム
+struct SkeletonStorybookItemView: View {
+    @State private var isAnimating = false
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // 表紙画像のプレースホルダー
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 90, height: 120)
+                .shimmer(isAnimating: isAnimating)
+            
+            // タイトルと日付のプレースホルダー
+            VStack(alignment: .leading, spacing: 8) {
+                // タイトルプレースホルダー
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 150, height: 16)
+                    .shimmer(isAnimating: isAnimating)
+                
+                // 日付プレースホルダー
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 80, height: 12)
+                    .shimmer(isAnimating: isAnimating)
+            }
+            
+            Spacer()
+            
+            // ハートと子供タグのプレースホルダー
+            VStack(spacing: 8) {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 20, height: 20)
+                    .shimmer(isAnimating: isAnimating)
+                
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 16)
+                    .shimmer(isAnimating: isAnimating)
+            }
+            .padding(.trailing, 8)
+        }
+        .padding(.vertical, 8)
+        .onAppear {
+            withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                isAnimating = true
+            }
+        }
+    }
+}

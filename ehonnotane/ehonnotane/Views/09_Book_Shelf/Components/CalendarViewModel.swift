@@ -172,25 +172,36 @@ class CalendarViewModel: ObservableObject {
         
         Task {
             do {
-                var newMarkedDates: Set<YearMonthDay> = []
-                // 週の各日をチェック
+                // 週の開始日の年月を取得
+                let year = calendar.component(.year, from: weekStart)
+                let month = calendar.component(.month, from: weekStart)
+                
+                // 月全体の作成日を1回のAPI呼び出しで取得（7回 → 1回に削減）
+                let createdDays = try await storybookService.fetchCreatedDays(
+                    userId: userId,
+                    year: year,
+                    month: month
+                )
+                
+                // 週の範囲（7日間）を計算
+                var weekDays: Set<Int> = []
                 for dayOffset in 0..<7 {
                     if let date = calendar.date(byAdding: .day, value: dayOffset, to: weekStart) {
-                        let year = calendar.component(.year, from: date)
-                        let month = calendar.component(.month, from: date)
-                        let day = calendar.component(.day, from: date)
+                        let dateYear = calendar.component(.year, from: date)
+                        let dateMonth = calendar.component(.month, from: date)
+                        let dateDay = calendar.component(.day, from: date)
                         
-                        // その日の絵本を取得して、存在するか確認
-                        let books = try await storybookService.fetchUserStorybooksByDate(
-                            userId: userId,
-                            year: year,
-                            month: month,
-                            day: day
-                        )
-                        if !books.isEmpty {
-                            newMarkedDates.insert(YearMonthDay(year: year, month: month, day: day))
+                        // 同じ年月で、作成日に含まれる日付のみマーク
+                        if dateYear == year && dateMonth == month && createdDays.contains(dateDay) {
+                            weekDays.insert(dateDay)
                         }
                     }
+                }
+                
+                // マーク済み日付セットを更新
+                var newMarkedDates: Set<YearMonthDay> = []
+                for day in weekDays {
+                    newMarkedDates.insert(YearMonthDay(year: year, month: month, day: day))
                 }
                 markedDates = newMarkedDates
             } catch {

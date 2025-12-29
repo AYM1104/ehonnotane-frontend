@@ -12,6 +12,9 @@ class ChildAndPageSelectViewModel: ObservableObject {
     @Published var availablePageCountOptions: [SelectOption] = []
     @Published var currentCredits: Int = 0
     
+    // クリーンアップ用: story_setting_idを保持
+    @Published var storySettingId: Int? = nil
+    
     // 選択可能なページ数を定義
     private let allPageCountOptions: [SelectOption] = [
         SelectOption(label: "3ページ", value: "3"),

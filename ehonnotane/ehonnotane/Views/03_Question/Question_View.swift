@@ -3,9 +3,17 @@ import SwiftUI
 /// 質問ビュー - 質問の表示と入力を行う
 struct Question_View: View {
     @StateObject private var viewModel: QuestionViewModel
+    @EnvironmentObject var coordinator: AppCoordinator
     
     // フォーカス管理
     @FocusState private var isTextFieldFocused: Bool
+    
+    // ナビゲーション確認用
+    @State private var showNavigationAlert: Bool = false
+    @State private var pendingNavigationAction: (() -> Void)? = nil
+    
+    // クリーンアップサービス
+    private let cleanupService = StorySettingCleanupService()
     
     init(onNavigateToThemeSelect: @escaping () -> Void, storySettingId: Int, childId: Int, storyPages: Int) {
         _viewModel = StateObject(wrappedValue: QuestionViewModel(
@@ -113,8 +121,12 @@ struct Question_View: View {
                 }
                 .padding(.bottom, -10)
             }
-            // ヘッダー
-            Header()
+            // ヘッダー（ナビゲーション確認コールバック付き）
+            Header(
+                onLogoTap: { handleNavigationAttempt { coordinator.navigateToUploadImage() } },
+                onBookShelfTap: { handleNavigationAttempt { coordinator.navigateToBookShelf() } },
+                onMyPageTap: { handleNavigationAttempt { coordinator.navigateToMyPage() } }
+            )
             
             // 回答送信中のローディング表示
             if viewModel.isSubmitting || viewModel.isLoadingQuestions {
@@ -150,6 +162,45 @@ struct Question_View: View {
         } message: {
             Text(viewModel.alertMessage)
         }
+        // ナビゲーション確認アラート
+        .alert("確認", isPresented: $showNavigationAlert) {
+            Button("キャンセル", role: .cancel) {
+                pendingNavigationAction = nil
+            }
+            Button("OK", role: .destructive) {
+                Task {
+                    await performCleanupAndNavigate()
+                }
+            }
+        } message: {
+            Text("これまでの操作が保存されずに画面が移動します。よろしいですか？")
+        }
+    }
+    
+    // MARK: - Navigation Handling
+    
+    /// ナビゲーション試行をハンドルし、確認アラートを表示
+    private func handleNavigationAttempt(_ action: @escaping () -> Void) {
+        pendingNavigationAction = action
+        showNavigationAlert = true
+    }
+    
+    /// クリーンアップを実行してからナビゲーション
+    private func performCleanupAndNavigate() async {
+        let storySettingId = viewModel.storySettingId
+        
+        do {
+            print("🗑️ Story Setting削除開始: ID=\(storySettingId)")
+            _ = try await cleanupService.deleteStorySetting(storySettingId: storySettingId)
+            print("✅ Story Setting削除完了")
+        } catch {
+            print("❌ Story Setting削除エラー: \(error)")
+            // エラーでも遷移は実行（ユーザーの意図を尊重）
+        }
+        
+        // 保留中のナビゲーションアクションを実行
+        pendingNavigationAction?()
+        pendingNavigationAction = nil
     }
 }
 

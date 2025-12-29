@@ -8,6 +8,11 @@ struct Header: View {
     // 設定ドロワーの表示状態
     @State private var isSettingPresented: Bool = false
     
+    // ナビゲーション割り込み用のコールバック（オプショナル）
+    var onLogoTap: (() -> Void)? = nil
+    var onBookShelfTap: (() -> Void)? = nil
+    var onMyPageTap: (() -> Void)? = nil
+    
     var body: some View {
         GeometryReader { geometry in
             VStack {
@@ -29,8 +34,12 @@ struct Header: View {
                             .foregroundColor(.white)
                     }
                     .onTapGesture {
-                        // ロゴとアプリタイトルをタップしたらUpload_Imageビューに遷移
-                        coordinator.navigateToUploadImage()
+                        // コールバックが提供されている場合はそれを呼び出し、なければ直接遷移
+                        if let onLogoTap = onLogoTap {
+                            onLogoTap()
+                        } else {
+                            coordinator.navigateToUploadImage()
+                        }
                     }
                     
                     Spacer()
@@ -43,8 +52,12 @@ struct Header: View {
                         .frame(width: 32, height: 32)
                         .padding(.trailing, 8)
                         .onTapGesture {
-                            // 本棚アイコンをタップしたら本棚ビューに遷移
-                            coordinator.navigateToBookShelf()
+                            // コールバックが提供されている場合はそれを呼び出し、なければ直接遷移
+                            if let onBookShelfTap = onBookShelfTap {
+                                onBookShelfTap()
+                            } else {
+                                coordinator.navigateToBookShelf()
+                            }
                         }
                     
                     // 歯車アイコン
@@ -82,7 +95,8 @@ struct Header: View {
             if isSettingPresented {
                 SettingDrawer(
                     isPresented: $isSettingPresented,
-                    headerHeight: 65
+                    headerHeight: 65,
+                    onMyPageTap: onMyPageTap
                 )
                 .frame(maxWidth: .infinity, alignment: .trailing) // 右寄せ
                 .ignoresSafeArea(edges: .bottom) // 下を無視
