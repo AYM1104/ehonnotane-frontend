@@ -57,8 +57,13 @@ class UserRegisterService: ObservableObject {
         let endpoint = "/api/users/\(userId)"
         let body = UpdateUserRequest(user_name: nickname)
         
-        // レスポンスの型はUserだが、ここでは使わないので破棄
-        let _: User = try await APIClient.shared.request(endpoint: endpoint, method: .put, body: body)
+        // APIリクエストを実行してユーザー情報を更新
+        let updatedUser: User = try await APIClient.shared.request(endpoint: endpoint, method: .put, body: body)
+        
+        // UserServiceのcurrentUserを更新して、アプリ内で最新情報を使えるようにする
+        await MainActor.run {
+            UserService.shared.currentUser = updatedUser
+        }
     }
     
     /// 誕生日テキストをISO 8601形式に変換 ("yyyy/MM/dd" → "yyyy-MM-dd")
@@ -78,8 +83,13 @@ class UserRegisterService: ObservableObject {
             birthdate: formattedBirthdate
         )
         
-        // レスポンスの型はChildだが、ここでは使わないので破棄
-        let _: Child = try await APIClient.shared.request(endpoint: endpoint, method: .post, body: body)
+        // APIリクエストを実行して子供情報を作成
+        let createdChild: Child = try await APIClient.shared.request(endpoint: endpoint, method: .post, body: body)
+        
+        // ChildServiceのchildrenリストに追加して、アプリ内で最新情報を使えるようにする
+        await MainActor.run {
+            ChildService.shared.children.append(createdChild)
+        }
     }
 }
     

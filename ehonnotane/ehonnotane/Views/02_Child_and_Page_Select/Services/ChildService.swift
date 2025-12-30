@@ -54,18 +54,34 @@ class ChildService: ObservableObject {
     
     // ユーザーの子供一覧を取得 ---------------------
     func fetchChildren(userId: String) async throws -> [Child] {
+        print("🔵 [ChildService] fetchChildren() 開始 - userId: \(userId)")
+        
         // APIエンドポイントを定義
         let endpoint = "/api/child/user/\(userId)"
+        print("🔵 [ChildService] APIエンドポイント: \(endpoint)")
         
         do {
             let response: [Child] = try await APIClient.shared.request(endpoint: endpoint)
+            print("✅ [ChildService] API呼び出し成功 - 取得件数: \(response.count)")
+            
+            if response.isEmpty {
+                print("⚠️ [ChildService] レスポンスが空です（子供情報0件）")
+            } else {
+                print("✅ [ChildService] 取得した子供情報:")
+                for (index, child) in response.enumerated() {
+                    print("  [\(index)] ID: \(child.id), 名前: \(child.name)")
+                }
+            }
             
             await MainActor.run {
                 self.children = response
+                print("✅ [ChildService] ChildService.shared.childrenに格納完了: \(self.children.count)件")
             }
             return response
             
         } catch {
+            print("❌ [ChildService] API呼び出し失敗: \(error)")
+            print("❌ [ChildService] エラー詳細: \(String(describing: error))")
             await MainActor.run {
                 self.errorMessage = error.localizedDescription
             }

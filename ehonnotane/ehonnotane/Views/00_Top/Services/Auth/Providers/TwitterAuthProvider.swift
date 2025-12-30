@@ -45,7 +45,12 @@ class TwitterAuthProvider: ObservableObject, AuthProvider {
     
     /// X（Twitter）ログインを実行
     func login(completion: @escaping (AuthResult) -> Void) {
+        print("🎯 TwitterAuthProvider.login() が呼ばれました")
+        print("🔍 authManager: \(String(describing: authManager))")
+        print("🔍 Auth0がimport可能か確認中...")
+        
         #if canImport(Auth0)
+        print("✅ Auth0モジュールが利用可能です")
         authManager?.isLoading = true
         authManager?.errorMessage = nil
         
@@ -53,13 +58,14 @@ class TwitterAuthProvider: ObservableObject, AuthProvider {
         print("🔍 Domain: \(domain)")
         print("🔍 Client ID: \(clientId)")
         print("🔍 Audience: \(audience)")
+        print("🔍 Connection: Twitter")
         
         // Auth0のUniversal LoginでTwitterプロバイダーを指定
         Auth0
             .webAuth(clientId: clientId, domain: domain)
             .scope("openid profile email")
             .audience(audience)
-            .parameters(["connection": "twitter"]) // Twitterプロバイダーを指定
+            .parameters(["connection": "Twitter"]) // Twitterプロバイダーを指定（大文字）
             .start { [weak self] result in
                 DispatchQueue.main.async {
                     self?.handleAuthResult(result, completion: completion)

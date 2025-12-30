@@ -24,29 +24,39 @@ class MyPageViewModel: BaseViewModel {
     /// ユーザー情報を取得（初回表示時など）
     /// ログイン時に既に取得済みの場合は、そのまま使用（APIリクエストなし）
     func loadUserInfo() async {
+        print("🔵 [MyPageViewModel] loadUserInfo() 開始")
         setLoading(true)
         clearError()
         
         guard let userId = currentUserId else {
+            print("❌ [MyPageViewModel] ユーザーIDが取得できません")
             setError("ユーザーIDが取得できません")
             return
         }
+        
+        print("🔵 [MyPageViewModel] ユーザーID: \(userId)")
         
         do {
             // 既にユーザー情報が取得済みの場合はAPIリクエストをスキップ
             // ログイン時に既に取得されているため、子供情報のみ取得
             if userService.currentUser == nil {
+                print("🔵 [MyPageViewModel] ユーザー情報が未取得のため、API呼び出し")
                 // ユーザー情報が存在しない場合のみ取得
                 _ = try await userService.fetchUser(userId: userId)
+                print("✅ [MyPageViewModel] ユーザー情報取得成功")
+            } else {
+                print("✅ [MyPageViewModel] ユーザー情報は既に取得済み: \(userService.currentUser?.user_name ?? "unknown")")
             }
             
             // 子供情報を取得
+            print("🔵 [MyPageViewModel] 子供情報の取得を開始")
             try await loadChildren(userId: userId)
+            print("✅ [MyPageViewModel] 子供情報取得完了: \(children.count)件")
             
             setLoading(false)
         } catch {
             setError("ユーザー情報の取得に失敗しました: \(error.localizedDescription)")
-            print("❌ ユーザー情報の取得に失敗: \(error)")
+            print("❌ [MyPageViewModel] ユーザー情報の取得に失敗: \(error)")
             setLoading(false)
         }
     }
@@ -79,13 +89,28 @@ class MyPageViewModel: BaseViewModel {
     
     /// 子供のリストを取得
     private func loadChildren(userId: String) async throws {
+        print("🔵 [MyPageViewModel] loadChildren() 開始 - userId: \(userId)")
         do {
             let fetchedChildren = try await childService.fetchChildren(userId: userId)
+            print("✅ [MyPageViewModel] API呼び出し成功 - 取得件数: \(fetchedChildren.count)")
+            
+            if fetchedChildren.isEmpty {
+                print("⚠️ [MyPageViewModel] 子供情報が0件です")
+            } else {
+                print("✅ [MyPageViewModel] 子供情報:")
+                for (index, child) in fetchedChildren.enumerated() {
+                    print("  [\(index)] ID: \(child.id), 名前: \(child.name), 誕生日: \(child.birthdate ?? "未設定")")
+                }
+            }
+            
             self.children = fetchedChildren
+            print("✅ [MyPageViewModel] viewModel.childrenに格納完了: \(self.children.count)件")
         } catch {
-            print("❌ 子供情報の取得に失敗: \(error)")
+            print("❌ [MyPageViewModel] 子供情報の取得に失敗: \(error)")
+            print("❌ [MyPageViewModel] エラー詳細: \(String(describing: error))")
             // 子供情報の取得失敗はエラーとしない（空のリストにする）
             self.children = []
+            print("⚠️ [MyPageViewModel] 子供情報を空配列に設定しました")
         }
     }
 }

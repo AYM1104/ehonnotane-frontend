@@ -14,7 +14,7 @@ struct RegisterLoginButton: View {
             style: .secondary,
             width: 292,
             fontName: "YuseiMagic-Regular",
-            fontSize: 24,
+            fontSize: 20,
             height: 48,
             action: {
                 // サインアップ用のモーダルを表示
@@ -30,7 +30,7 @@ struct RegisterLoginButton: View {
             title: "ログイン",
             width: 292,
             fontName: "YuseiMagic-Regular",
-            fontSize: 24,
+            fontSize: 20,
             height: 48,
             action: {
                 // ログイン用のモーダルを表示

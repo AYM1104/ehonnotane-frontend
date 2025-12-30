@@ -6,6 +6,7 @@ struct AccountDeletionView: View {
     @State private var isDeleting = false
     @State private var errorMessage: String?
     @State private var showConfirmation = false
+    @State private var showSuccessDeletion = false
     
     @Environment(\.presentationMode) var presentationMode
     
@@ -124,6 +125,15 @@ struct AccountDeletionView: View {
                 secondaryButton: .cancel(Text("キャンセル"))
             )
         }
+        .alert(isPresented: $showSuccessDeletion) {
+            Alert(
+                title: Text("削除完了"),
+                message: Text("アカウントを削除しました。"),
+                dismissButton: .default(Text("OK")) {
+                    handleDeletionComplete()
+                }
+            )
+        }
     }
     
     private func performDeletion() {
@@ -137,18 +147,36 @@ struct AccountDeletionView: View {
         
         Task {
             do {
+                print("🗑️ アカウント削除処理を開始します: \(userId)")
                 try await UserService.shared.deleteUser(userId: userId)
+                print("✅ アカウント削除処理が完了しました")
                 
                 await MainActor.run {
-                    authManager.logout()
-                    coordinator.navigateToTop()
+                    isDeleting = false
+                    showSuccessDeletion = true
                 }
             } catch {
                 await MainActor.run {
                     isDeleting = false
                     errorMessage = "削除に失敗しました: \(error.localizedDescription)"
+                    print("❌ アカウント削除に失敗しました: \(error)")
                 }
             }
+        }
+    }
+    
+    private func handleDeletionComplete() {
+        print("🔄 ログアウト処理を実行します")
+        authManager.logout()
+        
+        // モーダルを閉じる
+        print("🔄 AccountDeletionView を閉じます")
+        presentationMode.wrappedValue.dismiss()
+        
+        // 少し遅延させてからTop画面に遷移（モーダルが完全に閉じるまで待つ）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            print("🔄 Top画面に遷移します")
+            coordinator.navigateToTop()
         }
     }
 }

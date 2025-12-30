@@ -86,7 +86,11 @@ struct Top_View: View {
                     },
                     // X（Twitter）ログインを実行
                     onTwitterLogin: {
-                        twitterProvider.login { _ in }
+                        print("🔘 TopView: Xログインボタンがタップされました")
+                        print("🔍 TopView: twitterProvider = \(twitterProvider)")
+                        twitterProvider.login { result in
+                            print("🔄 TopView: Xログイン結果を受け取りました: success=\(result.success)")
+                        }
                     },
                     // LINEログインを実行
                     onLineLogin: {

@@ -6,6 +6,10 @@ struct User_Register_View: View {
     @State private var childNickname: String = "" // Keep for compatibility if needed, or remove if unused logic depends on it
     @State private var children: [ChildEntry] = []
     
+    // 登録ステータスモーダル用の状態管理
+    @State private var showRegistrationModal: Bool = false
+    @State private var registrationStatus: RegistrationStatus = .processing
+    
     @EnvironmentObject var coordinator: AppCoordinator
     @EnvironmentObject var authManager: AuthManager
     
@@ -77,6 +81,11 @@ struct User_Register_View: View {
                     .scaleEffect(1.5)
                     .tint(.white)
             }
+            
+            // 登録ステータスモーダル
+            if showRegistrationModal {
+                RegistrationStatusModal(status: registrationStatus)
+            }
         }
     }
     
@@ -146,6 +155,12 @@ struct User_Register_View: View {
             
             Task {
                 do {
+                    // モーダルを「登録中」状態で表示
+                    await MainActor.run {
+                        registrationStatus = .processing
+                        showRegistrationModal = true
+                    }
+                    
                     // ニックネームが空の場合はOAuth認証の表示名をフォールバックとして使用
                     let nicknameToSave: String
                     let trimmedNickname = userNickname.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -162,11 +177,25 @@ struct User_Register_View: View {
                         nickname: nicknameToSave,
                         children: children
                     )
+                    
+                    // 登録完了後、モーダルを「完了」状態に更新
                     await MainActor.run {
+                        registrationStatus = .completed
+                    }
+                    
+                    // 1.5秒待ってから画像アップロード画面に遷移
+                    try await Task.sleep(nanoseconds: 1_500_000_000)
+                    
+                    await MainActor.run {
+                        showRegistrationModal = false
                         coordinator.navigateToUploadImage()
                     }
                 } catch {
                     print("❌ Registration failed: \(error)")
+                    // エラー時はモーダルを閉じる
+                    await MainActor.run {
+                        showRegistrationModal = false
+                    }
                     // ここでアラートを表示するなどエラーハンドリングを追加可能
                 }
             }
@@ -191,6 +220,69 @@ private enum RegisterStep: Int, Identifiable {
     var id: Int { rawValue }
 }
 
+// 登録ステータスの状態を表すenum
+private enum RegistrationStatus {
+    case processing  // 登録中
+    case completed   // 登録完了
+    
+    var message: String {
+        switch self {
+        case .processing:
+            return "ユーザー情報登録中"
+        case .completed:
+            return "ユーザー情報の登録が完了しました"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .processing:
+            return "hourglass"
+        case .completed:
+            return "checkmark.circle.fill"
+        }
+    }
+}
+
+// 登録ステータスモーダル
+private struct RegistrationStatusModal: View {
+    let status: RegistrationStatus
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                // アイコン
+                if status == .processing {
+                    ProgressView()
+                        .scaleEffect(2)
+                        .tint(.white)
+                } else {
+                    Image(systemName: status.icon)
+                        .font(.system(size: 60))
+                        .foregroundColor(.green)
+                }
+                
+                // メッセージ
+                Text(status.message)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(40)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(white: 0.2))
+            )
+            .padding(.horizontal, 40)
+        }
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.3), value: status)
+    }
+}
 
 
 #Preview {
