@@ -11,6 +11,8 @@ struct Top_View: View {
     @EnvironmentObject var coordinator: AppCoordinator // AppCoordinatorへの参照
     @EnvironmentObject var authManager: AuthManager // AuthManagerへの参照
     @EnvironmentObject var googleProvider: GoogleAuthProvider // GoogleAuthProviderへの参照
+    @EnvironmentObject var lineProvider: LineAuthProvider // LineAuthProviderへの参照
+    @EnvironmentObject var twitterProvider: TwitterAuthProvider // TwitterAuthProviderへの参照
 
     private var modalContentOffset: CGFloat { showLoginModal ? -340 : 0 } // モーダルのオフセット
     private var modalContentScale: CGFloat { showLoginModal ? 0.5 : 1.0 } // モーダルのスケール
@@ -81,6 +83,14 @@ struct Top_View: View {
                     // Googleログインを実行
                     onGoogleLogin: {
                         googleProvider.login { _ in }
+                    },
+                    // X（Twitter）ログインを実行
+                    onTwitterLogin: {
+                        twitterProvider.login { _ in }
+                    },
+                    // LINEログインを実行
+                    onLineLogin: {
+                        lineProvider.login { _ in }
                     }
                 )
                 .ignoresSafeArea(.container, edges: .bottom)
@@ -96,8 +106,8 @@ struct Top_View: View {
                 }
             }
             
-            // ログイン後の画面遷移中のローディング表示
-            if coordinator.isNavigatingAfterLogin {
+            // 認証・ログイン処理中のローディング表示（OAuth認証中 or 画面遷移中）
+            if authManager.isLoading || coordinator.isNavigatingAfterLogin {
                 ZStack {
                     // 半透明の背景
                     Color.black.opacity(0.5)
@@ -170,4 +180,6 @@ private struct TitleWidthPreferenceKey: PreferenceKey {
         .environmentObject(AppCoordinator())
         .environmentObject(AuthManager())
         .environmentObject(GoogleAuthProvider())
+        .environmentObject(LineAuthProvider())
+        .environmentObject(TwitterAuthProvider())
 }

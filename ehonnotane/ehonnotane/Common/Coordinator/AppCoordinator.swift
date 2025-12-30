@@ -35,7 +35,7 @@ final class AppCoordinator: ObservableObject {
     /// 新規ユーザー登録画面に遷移
     func navigateToUserRegister() {
         isNavigatingAfterLogin = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             self?.currentScreen = .userRegister
             self?.isNavigatingAfterLogin = false
         }
@@ -44,7 +44,7 @@ final class AppCoordinator: ObservableObject {
     /// ログイン成功時に画像アップロード画面に遷移
     func navigateToUploadImage() {
         isNavigatingAfterLogin = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             self?.currentScreen = .uploadImage
             self?.isNavigatingAfterLogin = false
         }

@@ -13,8 +13,7 @@ struct PriceView: View {
             // 背景
             Background {}
             
-            // ヘッダー
-            Header()
+            
         
             // メインカード（画面下部に配置）
             VStack {
@@ -33,6 +32,8 @@ struct PriceView: View {
                 Carousel()
                     .padding(.bottom, -10)
             }
+            // ヘッダー
+            Header()
         }
         // .ignoresSafeArea()
     }

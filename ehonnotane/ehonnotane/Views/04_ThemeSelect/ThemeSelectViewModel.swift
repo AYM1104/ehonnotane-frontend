@@ -36,6 +36,27 @@ class ThemeSelectViewModel: ObservableObject {
     // クリーンアップ用: story_setting_idを保持
     @Published var storySettingId: Int? = nil
     
+    // 待ち時間軽減機能用のプロパティ
+    @Published var estimatedTimeRemaining: String = "処理中..."
+    @Published var generatedPagePreviews: [Int: String] = [:]  // [pageNumber: imageURL]
+    @Published var currentTip: String = ""
+    
+    // 生成開始時刻（残り時間計算用）
+    private var generationStartTime: Date?
+    
+    // ティップス管理
+    private var tipTimer: Timer?
+    private let tips = [
+        "✨ すてきな えほんを つくっているよ",
+        "🎨 きれいな いろで ぬっているよ",
+        "📚 たのしい おはなしに なるかな？",
+        "🌟 もうすこしで できあがるよ",
+        "💝 わくわくする えほんを かいているよ",
+        "🎯 しゅじんこうが いきいきと うごくよ",
+        "🌈 カラフルな せかいを つくっているよ"
+    ]
+    private var currentTipIndex = 0
+    
     // MARK: - Methods
     
     func loadThemeData(coordinator: AppCoordinator) async {
@@ -134,10 +155,18 @@ class ThemeSelectViewModel: ObservableObject {
         isGeneratingImages = true
         stepMessage = "物語を書いています..."
         currentStep = 0
-        progressPercentage = 0.0
-        // 物語生成フェーズ: 0% -> 20% を1%刻みで進める（1ページあたり約5秒を目安）
-        let estimatedStorySeconds = Double(storyPages) * 5.0
-        animateProgress(to: 0.2, totalDurationSec: estimatedStorySeconds)
+        
+        // 早期フィードバック: 即座に5%表示
+        progressPercentage = 0.05
+        
+        // 生成開始時刻を記録
+        generationStartTime = Date()
+        
+        // ティップス表示を開始
+        startTipRotation()
+        
+        // 物語生成フェーズ: 0% -> 15% を10秒固定で進める
+        animateProgress(to: 0.15, totalDurationSec: 10.0)
         
         do {
             // 最新のstory_setting_idを取得（再取得）
@@ -156,8 +185,8 @@ class ThemeSelectViewModel: ObservableObject {
             
             print("✅ ストーリーブック作成完了: \(storybookId)")
             
-            // 物語生成完了、画像生成開始へ（20%からスタート）
-            animateProgress(to: 0.2)
+            // 物語生成完了、画像生成開始へ（15%からスタート）
+            animateProgress(to: 0.15)
             stepMessage = "絵を描いています..."
             
             // 画像生成の進捗監視を開始
@@ -167,6 +196,7 @@ class ThemeSelectViewModel: ObservableObject {
             print("❌ ストーリーブック作成エラー: \(error)")
             errorMessage = "絵本の作成に失敗しました"
             isGeneratingImages = false
+            stopTipRotation()
         }
     }
     
@@ -235,20 +265,21 @@ class ThemeSelectViewModel: ObservableObject {
                 // 注意: ImageGenerationProgressMonitor は @MainActor なので、既に MainActor のコンテキストで実行されている
                 print("🎯 ThemeSelectViewModel: 画像生成完了 - StoryBookView へ遷移します (storybookId: \(storybookId))")
 
-                // 100%にする（1%刻みで滑らかに上げる）
+                // 99%から100%へ（0.5秒でスムーズに）
                 self.progressStepperTask?.cancel()
+                self.animateProgress(to: 1.0, totalDurationSec: 0.5)
+                
+                // 最終メッセージ
                 let finalSteps = max(self.totalSteps, 1)
                 self.totalSteps = finalSteps
                 self.currentStep = finalSteps
-                self.stepMessage = "絵を描いています... (\(finalSteps)/\(finalSteps))"
-                // まず即座に100%にセットしつつ、1%刻みの補間アニメーションも実行
-                self.progressPercentage = 1.0
-                self.animateProgress(to: 1.0, step: 0.01, totalDurationSec: 0.8)
+                self.stepMessage = "完成しました！"
                 
-                // アニメーション完了後も少し表示を残す
-                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2秒待機
+                // UIを少し表示してから遷移（1秒に短縮）
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
                 
                 self.isGeneratingImages = false
+                self.stopTipRotation()
                 coordinator.navigateToStorybook(storybookId: storybookId)
                 print("✅ ThemeSelectViewModel: 遷移処理完了")
             },
@@ -256,6 +287,7 @@ class ThemeSelectViewModel: ObservableObject {
                 Task { @MainActor in
                     self.errorMessage = errorMessage
                     self.isGeneratingImages = false
+                    self.stopTipRotation()
                 }
             }
         )
@@ -281,8 +313,8 @@ class ThemeSelectViewModel: ObservableObject {
         // 前回のページ番号を記憶
         var lastPage = 0
         
-        // 更新頻度（秒）
-        let updateInterval: Double = 0.1
+        // 更新頻度を0.3秒に変更（バッテリー節約とUI負荷軽減）
+        let updateInterval: Double = 0.3
         
         while monitor.isGeneratingImages {
             await MainActor.run {
@@ -290,8 +322,6 @@ class ThemeSelectViewModel: ObservableObject {
                 let currentPage = monitor.currentGeneratingPage
                 let totalPages = monitor.totalPages
                 let effectivePage = max(currentPage, 1)
-                // 表紙も含めた総枚数（推定時間計算用）
-                let estimatedTotalImages = max(totalPages, 0) + 1 // 表紙 + 本文ページ
                 
                 // ページ数が変わったらログ出力
                 if currentPage != lastPage {
@@ -299,20 +329,41 @@ class ThemeSelectViewModel: ObservableObject {
                     lastPage = currentPage
                 }
                 
-                // APIからの進捗値（0〜1）を20%基準に換算
-                let targetFromAPI = 0.2 + (0.8 * monitor.generationProgress)
-                print("🔎 progress monitor raw: generationProgress=\(monitor.generationProgress), targetFromAPI=\(targetFromAPI), status=\(monitor.isGeneratingImages)")
-                if targetFromAPI > self.progressPercentage {
-                    // 画像生成は1枚あたり約12秒とし、残り時間を推定してアニメーション速度を調整
-                    let remainingImages = Double(max(estimatedTotalImages - currentPage, 1))
-                    let estimatedSeconds = remainingImages * 12.0
-                    self.animateProgress(to: targetFromAPI, totalDurationSec: estimatedSeconds)
+                // APIからの進捗値（0〜1）を15%-95%の範囲にマッピング
+                let rawAPIProgress = 0.15 + (0.80 * monitor.generationProgress)
+                let targetFromAPI = min(rawAPIProgress, 0.95)  // 95%で上限
+                
+                // 進捗の後退を防止（企業レベルのUXパターン）
+                let clampedTarget = max(self.progressPercentage, targetFromAPI)
+                
+                // 95%以上でまだ生成中の場合は99%に設定（完了待ち）
+                let finalTarget: Double
+                if monitor.generationProgress >= 0.95 && monitor.isGeneratingImages {
+                    finalTarget = 0.99
+                } else {
+                    finalTarget = clampedTarget
                 }
+                
+                print("🔎 Progress: API=\(monitor.generationProgress), mapped=\(targetFromAPI), clamped=\(clampedTarget), final=\(finalTarget)")
+                
+                // 短い固定時間（0.5秒）で滑らかに追従
+                if finalTarget > self.progressPercentage {
+                    self.animateProgress(to: finalTarget, totalDurationSec: 0.5)
+                }
+                
+                // 推定残り時間を更新
+                self.updateEstimatedTimeRemaining()
                 
                 // UI表示用のステップ情報を更新
                 self.currentStep = effectivePage
                 self.totalSteps = totalPages
-                self.stepMessage = "絵を描いています... (\(effectivePage)/\(totalPages))"
+                
+                // 詳細なステップメッセージを生成
+                self.stepMessage = self.getDetailedStepMessage(
+                    currentPage: currentPage,
+                    totalPages: totalPages,
+                    currentStep: ""  // 必要に応じてmonitorから取得
+                )
             }
             
             try? await Task.sleep(nanoseconds: UInt64(updateInterval * 1_000_000_000))
@@ -325,15 +376,96 @@ class ThemeSelectViewModel: ObservableObject {
             if self.progressPercentage < 1.0 {
                 self.progressStepperTask?.cancel()
                 self.progressPercentage = 1.0
-                self.animateProgress(to: 1.0, step: 0.01, totalDurationSec: 0.8)
+                self.animateProgress(to: 1.0, totalDurationSec: 0.5)
             }
             // 最終ステップ表示を合わせる
             let finalSteps = monitor.totalPages
             if finalSteps > 0 {
                 self.totalSteps = finalSteps
                 self.currentStep = finalSteps
-                self.stepMessage = "絵を描いています... (\(finalSteps)/\(finalSteps))"
+                self.stepMessage = "えほんを仕上げています..."
             }
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// 詳細なステップメッセージを生成
+    private func getDetailedStepMessage(currentPage: Int, totalPages: Int, currentStep: String) -> String {
+        if currentPage == 0 {
+            return "表紙を描いています..."
+        } else if currentPage > totalPages {
+            return "えほんを仕上げています..."
+        } else {
+            // currentStepに応じたメッセージ（将来的に拡張可能）
+            switch currentStep {
+            case "prompt":
+                return "\(currentPage)ページ目のアイデアを考えています..."
+            case "api_call":
+                return "\(currentPage)ページ目の絵を描いています..."
+            case "saving":
+                return "\(currentPage)ページ目を仕上げています..."
+            default:
+                return "絵を描いています... (\(currentPage)/\(totalPages)ページ)"
+            }
+        }
+    }
+    
+    /// 推定残り時間を更新
+    private func updateEstimatedTimeRemaining() {
+        guard let startTime = generationStartTime else {
+            estimatedTimeRemaining = "処理中..."
+            return
+        }
+        
+        let elapsed = Date().timeIntervalSince(startTime)
+        let progressMade = progressPercentage
+        
+        // 10%以上進んでから推定を開始（初期は不安定なため）
+        guard progressMade > 0.1 else {
+            estimatedTimeRemaining = "計算中..."
+            return
+        }
+        
+        let estimatedTotal = elapsed / progressMade
+        let remaining = max(0, estimatedTotal - elapsed)
+        
+        if remaining < 60 {
+            estimatedTimeRemaining = "残り約\(Int(remaining))秒"
+        } else {
+            let minutes = Int(remaining / 60)
+            estimatedTimeRemaining = "残り約\(minutes)分"
+        }
+    }
+    
+    /// ティップスローテーションを開始
+    private func startTipRotation() {
+        currentTipIndex = 0
+        currentTip = tips[currentTipIndex]
+        
+        // 5秒ごとにティップスを切り替え
+        tipTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            // フェードアウト
+            withAnimation(.easeOut(duration: 0.3)) {
+                self.currentTip = ""
+            }
+            
+            // 0.3秒後に次のティップスを表示（フェードイン）
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.currentTipIndex = (self.currentTipIndex + 1) % self.tips.count
+                withAnimation(.easeIn(duration: 0.3)) {
+                    self.currentTip = self.tips[self.currentTipIndex]
+                }
+            }
+        }
+    }
+    
+    /// ティップスローテーションを停止
+    private func stopTipRotation() {
+        tipTimer?.invalidate()
+        tipTimer = nil
+        currentTip = ""
     }
 }

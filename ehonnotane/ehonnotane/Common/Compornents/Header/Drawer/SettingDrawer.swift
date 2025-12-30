@@ -6,6 +6,7 @@ struct SettingDrawer: View {
     var headerHeight: CGFloat? = nil
     @State private var slideIn: Bool = false
     @EnvironmentObject var coordinator: AppCoordinator
+    @EnvironmentObject var authManager: AuthManager
     
     // ナビゲーション割り込み用のコールバック（オプショナル）
     var onMyPageTap: (() -> Void)? = nil
@@ -123,7 +124,19 @@ struct SettingDrawer: View {
                                 title: "ログアウト",
                                 icon: Image("icon-logout")
                             ) {
-                                // TODO: ログアウト処理
+                                // ドロワーを閉じてからログアウト処理を実行
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                    slideIn = false
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                        isPresented = false
+                                    }
+                                    // ログアウト実行
+                                    authManager.logout()
+                                    // Top画面に遷移
+                                    coordinator.navigateToTop()
+                                }
                             }
                             DrawerItemRow(
                                 title: "アカウント削除",
@@ -175,6 +188,7 @@ struct SettingDrawer: View {
         )
         .frame(maxWidth: .infinity, alignment: .trailing) // 右寄せ
         .environmentObject(AppCoordinator())
+        .environmentObject(AuthManager())
     }
 }
 

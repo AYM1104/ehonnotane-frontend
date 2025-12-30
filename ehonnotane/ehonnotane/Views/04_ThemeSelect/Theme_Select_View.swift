@@ -120,14 +120,17 @@ struct Theme_Select_View: View {
             
             // 生成中プログレスオーバーレイ
             if viewModel.isGeneratingImages {
-                GenerationProgressView(
+                EnhancedGenerationProgressView(
                     progress: viewModel.progressPercentage,
-                    message: viewModel.stepMessage
+                    message: viewModel.stepMessage,
+                    estimatedTime: viewModel.estimatedTimeRemaining,
+                    currentTip: viewModel.currentTip,
+                    totalPages: viewModel.totalSteps,
+                    currentPage: viewModel.currentStep,
+                    generatedPreviews: viewModel.generatedPagePreviews
                 )
                 .transition(.opacity)
                 .zIndex(100)
-                // プログレス値の変化をアニメーションさせる
-                .animation(.linear(duration: 1.5), value: viewModel.progressPercentage)
             }
         }
         .onAppear {

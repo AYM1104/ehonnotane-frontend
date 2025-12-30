@@ -51,14 +51,10 @@ class UserService: ObservableObject {
             if case .serverError(let code, _) = error, code == 404 {
                 print("ℹ️ User not found in backend, creating new user...")
                 
-                guard let email = auth0User.email else {
-                    throw NSError(domain: "UserService", code: 400, userInfo: [NSLocalizedDescriptionKey: "メールアドレスが必要です"])
-                }
-                
                 let newUser = UserCreateRequest(
                     id: auth0User.id,
                     user_name: auth0User.name ?? "User",
-                    email: email
+                    email: auth0User.email
                 )
                 
                 let createdUser = try await createUser(user: newUser)

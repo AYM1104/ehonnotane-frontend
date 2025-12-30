@@ -5,6 +5,8 @@ struct ehonnotaneApp: App {
     @StateObject private var coordinator = AppCoordinator()
     @StateObject private var authManager = AuthManager()
     @StateObject private var googleProvider = GoogleAuthProvider()
+    @StateObject private var lineProvider = LineAuthProvider()
+    @StateObject private var twitterProvider = TwitterAuthProvider()
     
     init() {
         FontRegistration.registerFonts()
@@ -63,9 +65,13 @@ struct ehonnotaneApp: App {
             .environmentObject(coordinator)
             .environmentObject(authManager)
             .environmentObject(googleProvider)
+            .environmentObject(lineProvider)
+            .environmentObject(twitterProvider)
             .onAppear {
-                // GoogleAuthProviderにAuthManagerへの参照を設定
+                // 認証プロバイダーにAuthManagerへの参照を設定
                 googleProvider.setAuthManager(authManager)
+                lineProvider.setAuthManager(authManager)
+                twitterProvider.setAuthManager(authManager)
                 
                 // 起動時にログイン状態を確認
                 authManager.checkLoginStatus()

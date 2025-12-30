@@ -6,7 +6,7 @@ import Foundation
 struct UserCreateRequest: Encodable {
     let id: String
     let user_name: String
-    let email: String
+    let email: String?
 }
 
 
