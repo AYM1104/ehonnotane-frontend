@@ -1,12 +1,23 @@
 import SwiftUI
 
+enum AlertType: Identifiable {
+    case confirmation
+    case success
+    
+    var id: String {
+        switch self {
+        case .confirmation: return "confirmation"
+        case .success: return "success"
+        }
+    }
+}
+
 struct AccountDeletionView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var coordinator: AppCoordinator
     @State private var isDeleting = false
     @State private var errorMessage: String?
-    @State private var showConfirmation = false
-    @State private var showSuccessDeletion = false
+    @State private var alertType: AlertType?
     
     @Environment(\.presentationMode) var presentationMode
     
@@ -79,7 +90,7 @@ struct AccountDeletionView: View {
                 // Buttons
                 VStack(spacing: 16) {
                     Button(action: {
-                        showConfirmation = true
+                        alertType = .confirmation
                     }) {
                         Text("アカウントを削除する")
                             .font(.system(size: 16, weight: .bold))
@@ -90,6 +101,7 @@ struct AccountDeletionView: View {
                             .cornerRadius(12)
                     }
                     .disabled(isDeleting)
+                    .allowsHitTesting(!isDeleting)
                     
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
@@ -115,24 +127,26 @@ struct AccountDeletionView: View {
                     .scaleEffect(1.5)
             }
         }
-        .alert(isPresented: $showConfirmation) {
-            Alert(
-                title: Text("最終確認"),
-                message: Text("この操作は取り消せません。本当に削除しますか？"),
-                primaryButton: .destructive(Text("削除する")) {
-                    performDeletion()
-                },
-                secondaryButton: .cancel(Text("キャンセル"))
-            )
-        }
-        .alert(isPresented: $showSuccessDeletion) {
-            Alert(
-                title: Text("削除完了"),
-                message: Text("アカウントを削除しました。"),
-                dismissButton: .default(Text("OK")) {
-                    handleDeletionComplete()
-                }
-            )
+        .alert(item: $alertType) { type in
+            switch type {
+            case .confirmation:
+                return Alert(
+                    title: Text("最終確認"),
+                    message: Text("この操作は取り消せません。本当に削除しますか？"),
+                    primaryButton: .destructive(Text("削除する")) {
+                        performDeletion()
+                    },
+                    secondaryButton: .cancel(Text("キャンセル"))
+                )
+            case .success:
+                return Alert(
+                    title: Text("削除完了"),
+                    message: Text("アカウントを削除しました。"),
+                    dismissButton: .default(Text("OK")) {
+                        handleDeletionComplete()
+                    }
+                )
+            }
         }
     }
     
@@ -153,7 +167,7 @@ struct AccountDeletionView: View {
                 
                 await MainActor.run {
                     isDeleting = false
-                    showSuccessDeletion = true
+                    alertType = .success
                 }
             } catch {
                 await MainActor.run {

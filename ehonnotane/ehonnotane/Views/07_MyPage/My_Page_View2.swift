@@ -93,19 +93,19 @@ struct My_Page_View2: View {
                         // 左：すべて
                         StatItem(
                             label: "すべて",
-                            value: "12"
+                            value: "\(viewModel.statistics?.total ?? 0)"
                         )
                         
                         // 中央：今月
                         StatItem(
                             label: "今月",
-                            value: "6"
+                            value: "\(viewModel.statistics?.thisMonth ?? 0)"
                         )
                         
                         // 右：今週
                         StatItem(
                             label: "今週",
-                            value: "2"
+                            value: "\(viewModel.statistics?.thisWeek ?? 0)"
                         )
                     }
                 }

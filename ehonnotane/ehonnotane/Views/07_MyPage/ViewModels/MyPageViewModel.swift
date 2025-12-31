@@ -10,6 +10,12 @@ class MyPageViewModel: BaseViewModel {
     
     /// ChildServiceのインスタンス
     private let childService = ChildService.shared
+    
+    /// StatisticsServiceのインスタンス
+    private let statisticsService = StatisticsService.shared
+    
+    /// 統計データ
+    @Published var statistics: Statistics?
 
     /// ユーザー名を取得
     var username: String {
@@ -52,6 +58,11 @@ class MyPageViewModel: BaseViewModel {
             print("🔵 [MyPageViewModel] 子供情報の取得を開始")
             try await loadChildren(userId: userId)
             print("✅ [MyPageViewModel] 子供情報取得完了: \(children.count)件")
+            
+            // 統計データを取得
+            print("🔵 [MyPageViewModel] 統計データの取得を開始")
+            try await loadStatistics(userId: userId)
+            print("✅ [MyPageViewModel] 統計データ取得完了")
             
             setLoading(false)
         } catch {
@@ -111,6 +122,24 @@ class MyPageViewModel: BaseViewModel {
             // 子供情報の取得失敗はエラーとしない（空のリストにする）
             self.children = []
             print("⚠️ [MyPageViewModel] 子供情報を空配列に設定しました")
+        }
+    }
+    
+    /// 統計データを取得
+    private func loadStatistics(userId: String) async throws {
+        print("🔵 [MyPageViewModel] loadStatistics() 開始 - userId: \(userId)")
+        do {
+            let fetchedStatistics = try await statisticsService.fetchStatistics(userId: userId)
+            print("✅ [MyPageViewModel] 統計データ取得成功: すべて=\(fetchedStatistics.total), 今月=\(fetchedStatistics.thisMonth), 今週=\(fetchedStatistics.thisWeek)")
+            
+            self.statistics = fetchedStatistics
+            print("✅ [MyPageViewModel] viewModel.statisticsに格納完了")
+        } catch {
+            print("❌ [MyPageViewModel] 統計データの取得に失敗: \(error)")
+            print("❌ [MyPageViewModel] エラー詳細: \(String(describing: error))")
+            // 統計データの取得失敗はエラーとしない（nilのまま）
+            self.statistics = nil
+            print("⚠️ [MyPageViewModel] 統計データをnilに設定しました")
         }
     }
 }
