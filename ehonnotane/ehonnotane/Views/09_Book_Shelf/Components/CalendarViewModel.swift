@@ -278,5 +278,41 @@ class CalendarViewModel: ObservableObject {
             return date1 > date2 // 降順（新しい日付が上）
         }
     }
+    
+    /// お気に入り状態を更新（API完了を待つ）
+    func toggleFavorite(storybookId: Int) async {
+        // 1. UIを即座に更新（楽観的更新）
+        if let index = storybooks.firstIndex(where: { $0.id == storybookId }) {
+            let updatedBook = storybooks[index]
+            let newFavoriteStatus = !updatedBook.isFavorite
+            
+            // ※ structなので新しいインスタンスを作成して差し替える
+            let updatedItem = StoryBookListItem(
+                id: updatedBook.id,
+                storyPlotId: updatedBook.storyPlotId,
+                userId: updatedBook.userId,
+                childId: updatedBook.childId,
+                title: updatedBook.title,
+                coverImageUrl: updatedBook.coverImageUrl,
+                createdAt: updatedBook.createdAt,
+                isFavorite: newFavoriteStatus
+            )
+            storybooks[index] = updatedItem
+            
+            // 2. API呼び出しの完了を待つ
+            do {
+                try await storybookService.updateFavoriteStatus(
+                    storybookId: storybookId,
+                    isFavorite: newFavoriteStatus
+                )
+                print("✅ お気に入り状態を更新しました: \(newFavoriteStatus)")
+            } catch {
+                // 3. エラー時は元の状態に戻す（ロールバック）
+                print("❌ お気に入り更新エラー: \(error)")
+                storybooks[index] = updatedBook // 元の状態に戻す
+                errorMessage = "お気に入りの更新に失敗しました"
+            }
+        }
+    }
 }
 

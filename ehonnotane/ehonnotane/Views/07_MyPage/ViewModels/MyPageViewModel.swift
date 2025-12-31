@@ -8,11 +8,20 @@ class MyPageViewModel: BaseViewModel {
     /// 子供のリスト
     @Published var children: [Child] = []
     
+    /// お気に入りの絵本リスト
+    @Published var favoriteBooks: [StoryBookListItem] = []
+    
+    /// お気に入り絵本の読み込み状態
+    @Published var isLoadingFavorites: Bool = false
+    
     /// ChildServiceのインスタンス
     private let childService = ChildService.shared
     
     /// StatisticsServiceのインスタンス
     private let statisticsService = StatisticsService.shared
+    
+    /// StorybookServiceのインスタンス
+    private let storybookService = StorybookService.shared
     
     /// 統計データ
     @Published var statistics: Statistics?
@@ -140,6 +149,29 @@ class MyPageViewModel: BaseViewModel {
             // 統計データの取得失敗はエラーとしない（nilのまま）
             self.statistics = nil
             print("⚠️ [MyPageViewModel] 統計データをnilに設定しました")
+        }
+    }
+    
+    /// お気に入りの絵本を取得
+    func fetchFavoriteBooks(userId: String) async {
+        print("🔵 [MyPageViewModel] fetchFavoriteBooks() 開始 - userId: \(userId)")
+        isLoadingFavorites = true
+        
+        do {
+            // ユーザーの絵本一覧を取得
+            let allBooks = try await storybookService.fetchUserStorybooks(userId: userId)
+            print("✅ [MyPageViewModel] 絵本一覧取得成功: \(allBooks.count)件")
+            
+            // お気に入りのみをフィルタリング
+            let favorites = allBooks.filter { $0.isFavorite }
+            print("✅ [MyPageViewModel] お気に入り絵本: \(favorites.count)件")
+            
+            self.favoriteBooks = favorites
+            isLoadingFavorites = false
+        } catch {
+            print("❌ [MyPageViewModel] お気に入り絵本の取得に失敗: \(error)")
+            self.favoriteBooks = []
+            isLoadingFavorites = false
         }
     }
 }

@@ -1013,7 +1013,7 @@ extension StorybookService {
             
             // デバッグ用: 実際のレスポンスJSONを出力
             if let jsonString = String(data: data, encoding: .utf8) {
-                print("📥 絵本一覧取得レスポンスJSON: \(jsonString.prefix(500))")
+                print("📥 絵本一覧取得レスポンスJSON（全体）: \(jsonString)")
             }
             
             let decoder = JSONDecoder()
@@ -1296,6 +1296,57 @@ extension StorybookService {
             throw error
         } catch {
             print("❌ story_setting削除失敗: \(error)")
+            throw StorybookAPIError.networkError(error)
+        }
+    }
+    
+    // MARK: - お気に入り状態更新
+    /// ストーリーブックのお気に入り状態を更新する
+    /// - Parameters:
+    ///   - storybookId: ストーリーブックID
+    ///   - isFavorite: お気に入り状態
+    func updateFavoriteStatus(storybookId: Int, isFavorite: Bool) async throws {
+        try checkAuthBeforeRequest()
+        
+        var components = URLComponents(string: "\(baseURL)/api/storybook/\(storybookId)/favorite")!
+        components.queryItems = [
+            URLQueryItem(name: "is_favorite", value: String(isFavorite))
+        ]
+        
+        guard let url = components.url else {
+            throw StorybookAPIError.invalidURL
+        }
+        
+        guard let token = getAccessToken() else {
+            throw StorybookAPIError.serverError(401, "認証が必要です")
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw StorybookAPIError.invalidResponse
+            }
+            
+            if httpResponse.statusCode == 401 {
+                handleAuthError(StorybookAPIError.serverError(401, "認証エラー"))
+                throw StorybookAPIError.serverError(401, "認証エラー")
+            }
+            
+            guard 200...299 ~= httpResponse.statusCode else {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "不明なエラー"
+                throw StorybookAPIError.serverError(httpResponse.statusCode, errorMessage)
+            }
+            
+            print("✅ お気に入り状態更新成功: storybookId=\(storybookId), isFavorite=\(isFavorite)")
+        } catch let error as StorybookAPIError {
+            handleAuthError(error)
+            throw error
+        } catch {
+            print("❌ お気に入り状態更新失敗: \(error)")
             throw StorybookAPIError.networkError(error)
         }
     }

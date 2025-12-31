@@ -11,6 +11,8 @@ struct My_Page_View2: View {
     // 選択されたタブを管理（子供の名前で管理）
     @State private var selectedTab: String? = nil
     
+
+    
     var body: some View {
         ZStack(alignment: .top) {
             // 背景
@@ -161,14 +163,47 @@ struct My_Page_View2: View {
                         Spacer()
                             .frame(height: 16) // タブとの間隔
                         
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 16) {
-                                // サンプルデータ（実際のデータに置き換える）
-                                ForEach(0..<4) { index in
-                                    BookItem()
+                        // 選択されたタブに応じてお気に入りをフィルタリング
+                        let filteredFavorites: [StoryBookListItem] = {
+                            guard let selectedTab = selectedTab else { return viewModel.favoriteBooks }
+                            
+                            // 子供のタブが選択されている場合
+                            if let child = viewModel.children.first(where: { $0.name == selectedTab }) {
+                                return viewModel.favoriteBooks.filter { $0.childId == child.id }
+                            }
+                            
+                            // ユーザー名のタブが選択されている場合（child_idがnilのもの）
+                            if selectedTab == viewModel.username {
+                                return viewModel.favoriteBooks.filter { $0.childId == nil }
+                            }
+                            
+                            return viewModel.favoriteBooks
+                        }()
+                        
+                        
+                        Group {
+                            if filteredFavorites.isEmpty {
+                                // お気に入りが空の場合
+                                Text("お気に入りの絵本が登録されていません")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 40)
+                            } else {
+                                // お気に入りがある場合
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        ForEach(filteredFavorites) { book in
+                                            BookItem(book: book)
+                                                .onTapGesture {
+                                                    // 絵本詳細画面に遷移
+                                                    coordinator.navigateToStorybook(storybookId: book.id)
+                                                }
+                                        }
+                                    }
+                                    .padding(.horizontal, 24)
                                 }
                             }
-                            .padding(.horizontal, 24)
                         }
                         .padding(.bottom, 0) // 下の余白
                     }
@@ -181,9 +216,21 @@ struct My_Page_View2: View {
         }
 //        .ignoresSafeArea()
         .onAppear {
+            print("🔵 [My_Page_View2] onAppear が呼ばれました")
             // ユーザー情報を取得
             Task {
+                print("🔵 [My_Page_View2] Task開始 - お気に入りを取得します")
+                // 毎回、最初にお気に入りを最新化
+                if let userId = viewModel.currentUserId {
+                    print("🔵 [My_Page_View2] userId取得成功: \(userId)")
+                    await viewModel.fetchFavoriteBooks(userId: userId)
+                    print("✅ [My_Page_View2] お気に入り取得完了: \(viewModel.favoriteBooks.count)件")
+                } else {
+                    print("❌ [My_Page_View2] userIdが取得できませんでした")
+                }
+                
                 await viewModel.loadUserInfo()
+                
                 // 初期状態でタブを選択
                 if selectedTab == nil {
                     if !viewModel.children.isEmpty {
@@ -256,12 +303,60 @@ struct My_Page_View2: View {
     // MARK: - 絵本アイテム
     
     @ViewBuilder
-    private func BookItem() -> some View {
-        // 表紙（四角い図形）
-        Rectangle()
-            .fill(Color.gray.opacity(0.3))
-            .frame(width: 90, height: 120)
-            .cornerRadius(8)
+    private func BookItem(book: StoryBookListItem) -> some View {
+        VStack(spacing: 0) {
+            // 表紙画像
+            if let coverImageUrl = book.coverImageUrl {
+                AsyncImage(url: URL(string: coverImageUrl)) { phase in
+                    switch phase {
+                    case .empty:
+                        // 読み込み中
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 90, height: 120)
+                            .cornerRadius(8)
+                            .overlay(
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            )
+                    case .success(let image):
+                        // 画像読み込み成功
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 90, height: 120)
+                            .cornerRadius(8)
+                            .clipped()
+                    case .failure(_):
+                        // 画像読み込み失敗
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 90, height: 120)
+                            .cornerRadius(8)
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .foregroundColor(.white.opacity(0.5))
+                            )
+                    @unknown default:
+                        // その他の状態
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 90, height: 120)
+                            .cornerRadius(8)
+                    }
+                }
+            } else {
+                // 画像URLがない場合
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 90, height: 120)
+                    .cornerRadius(8)
+                    .overlay(
+                        Image(systemName: "book.closed")
+                            .foregroundColor(.white.opacity(0.5))
+                    )
+            }
+        }
     }
     
     // MARK: - スケルトンローディング（テーマ選択ビューと同じスタイル）
@@ -294,6 +389,12 @@ struct SkeletonShimmerView: View {
 }
 
 #Preview {
+    // プレビューでは空の状態を表示（Swift Concurrencyの制約のため）
+    // 実際にお気に入りの表示を確認するには実機/シミュレーターを使用してください
     My_Page_View2()
         .environmentObject(AuthManager())
+        .environmentObject(AppCoordinator())
 }
+
+
+

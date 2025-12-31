@@ -66,7 +66,12 @@ struct CalendarView: View {
                     selectedDate: $viewModel.selectedDate,
                     selectedChildId: $viewModel.selectedChildId,
                     availableHeight: max(0, geometry.size.height - viewModel.calendarHeight - 16 - 16), // カレンダー高さ + padding(.top, 16) + 下部余白16pxを引く
-                    children: viewModel.children
+                    children: viewModel.children,
+                    onFavoriteTap: { storybookId in
+                        Task {
+                            await viewModel.toggleFavorite(storybookId: storybookId)
+                        }
+                    }
                 )
                 .padding(.top, 16)
                 .padding(.bottom, 16) // 下部余白16px

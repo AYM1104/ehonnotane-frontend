@@ -207,7 +207,10 @@ struct CalendarViewWithTestData: View {
                     children: [
                         Child(id: 1, user_id: "test-user-1", name: "アユ", birthdate: nil, color_theme: nil, created_at: ""),
                         Child(id: 2, user_id: "test-user-1", name: "ハル", birthdate: nil, color_theme: nil, created_at: "")
-                    ]
+                    ],
+                    onFavoriteTap: { _ in
+                        // プレビュー用：何もしない
+                    }
                 )
                 .padding(.top, 16)
                 .padding(.bottom, 16)

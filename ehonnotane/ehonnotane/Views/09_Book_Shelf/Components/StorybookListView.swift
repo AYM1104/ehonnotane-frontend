@@ -8,6 +8,7 @@ struct StorybookListView: View {
     @Binding var selectedChildId: Int? // 選択された子供のID
     var availableHeight: CGFloat? = nil // 利用可能な高さ（nilの場合は制限なし）
     let children: [Child] // 子供のリスト
+    let onFavoriteTap: ((Int) -> Void)? // お気に入りタップのコールバック
     
     @State private var showFilterSheet = false // フィルターシートの表示状態
     
@@ -166,6 +167,10 @@ struct StorybookListView: View {
                                 onChildTagTap: { childId in
                                     // 子供の名前タグをタップしたときにフィルターを適用
                                     selectedChildId = childId
+                                },
+                                onFavoriteTap: { storybookId in
+                                    // お気に入りをタップしたときにViewModelに通知
+                                    onFavoriteTap?(storybookId)
                                 }
                             )
                             
@@ -450,6 +455,7 @@ struct StorybookListItemView: View {
     let storybook: StoryBookListItem
     let children: [Child] // 子供のリスト
     let onChildTagTap: ((Int) -> Void)? // 子供の名前タグをタップしたときのコールバック
+    let onFavoriteTap: ((Int) -> Void)? // お気に入りタップのコールバック
     @EnvironmentObject var coordinator: AppCoordinator
     
     var body: some View {
@@ -509,10 +515,15 @@ struct StorybookListItemView: View {
                 
                 // ハートアイコンと子供の名前タグ
                 VStack(spacing: 8) {
-                    // ハートアイコン
-                    Image(systemName: storybook.isFavorite ? "heart.fill" : "heart")
-                        .font(.system(size: 20))
-                        .foregroundColor(storybook.isFavorite ? .red : Color.gray.opacity(0.5))
+                    // ハートアイコン（ボタン化）
+                    Button(action: {
+                        onFavoriteTap?(storybook.id)
+                    }) {
+                        Image(systemName: storybook.isFavorite ? "heart.fill" : "heart")
+                            .font(.system(size: 20))
+                            .foregroundColor(storybook.isFavorite ? .red : Color.gray.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
                     
                     // 子供の名前のタグ（ハートの下に配置、タップ可能）
                     if let childId = storybook.childId,
