@@ -174,5 +174,32 @@ class MyPageViewModel: BaseViewModel {
             isLoadingFavorites = false
         }
     }
+    
+    /// お子様を追加
+    func addChild(name: String, birthDate: Date) async {
+        print("🔵 [MyPageViewModel] addChild() 開始 - 名前: \(name)")
+        
+        guard let userId = currentUserId else {
+            print("❌ [MyPageViewModel] ユーザーIDが取得できません")
+            return
+        }
+        
+        do {
+            // 新しい子供を追加
+            let newChild = try await childService.createChild(
+                userId: userId,
+                name: name,
+                birthdate: birthDate
+            )
+            print("✅ [MyPageViewModel] 子供追加成功: \(newChild.name)")
+            
+            // リストに追加
+            children.append(newChild)
+            print("✅ [MyPageViewModel] 子供リスト更新完了: \(children.count)件")
+        } catch {
+            print("❌ [MyPageViewModel] 子供追加に失敗: \(error)")
+            setError("お子様の追加に失敗しました")
+        }
+    }
 }
 

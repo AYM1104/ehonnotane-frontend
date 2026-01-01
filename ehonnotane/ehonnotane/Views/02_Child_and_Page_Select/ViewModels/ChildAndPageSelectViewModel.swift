@@ -12,6 +12,9 @@ class ChildAndPageSelectViewModel: ObservableObject {
     @Published var availablePageCountOptions: [SelectOption] = []
     @Published var currentCredits: Int = 0
     
+    // 現在のページインデックス（スライド用）
+    @Published var currentPageIndex: Int = 0
+    
     // クリーンアップ用: story_setting_idを保持
     @Published var storySettingId: Int? = nil
     
@@ -88,14 +91,35 @@ class ChildAndPageSelectViewModel: ObservableObject {
     func confirmSelection(storySettingId: Int) async throws {
         self.isLoading = true
         
-        // ページ数は必須
+        // ページ数は必須（バリデーション済みだが念のため）
         guard let pageCount = Int(selectedPageCount) else {
             self.isLoading = false
             throw NSError(domain: "Validation", code: 400, userInfo: [NSLocalizedDescriptionKey: "ページ数が選択されていません"])
         }
         
-        // 子供IDはオプショナル（子供が0人の場合も許可）
-        let childId: Int? = selectedChild.isEmpty ? nil : Int(selectedChild)
+        // 子供の選択チェック
+        // childrenCount >= 2 の場合は選択必須
+        if childrenCount >= 2 && selectedChild.isEmpty {
+            self.isLoading = false
+            throw NSError(domain: "Validation", code: 400, userInfo: [NSLocalizedDescriptionKey: "お子さまを選択してください"])
+        }
+        
+        // 子供IDを設定
+        // 選択されている場合はそのID、空の場合はnil（0人または1人の場合）
+        // ただし、1人の場合でselectedChildがセットされていない場合（念のため）は、
+        // optionsの最初の要素をデフォルトとして使うロジックも考えられるが、
+        // loadChildrenで既にセットされているはず。
+        
+        var childId: Int? = nil
+        
+        if !selectedChild.isEmpty {
+            childId = Int(selectedChild)
+        } else if childrenCount == 1 {
+            // 念のため、1人の場合は自動的にそのIDを使用（loadChildrenでセットされるはずだが）
+            if let firstChild = childOptions.first?.value {
+                childId = Int(firstChild)
+            }
+        }
         
         do {
             // 物語設定を更新

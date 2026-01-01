@@ -23,6 +23,11 @@ struct StoryBookView: View {
         )
     }
     
+    var titleFontSize: CGFloat {
+        // 文字数が15文字を超える場合は少し小さくする
+        storyTitle.count > 15 ? 22 : 28
+    }
+    
     var body: some View {
         // ヘッダー
         ZStack(alignment: .top) {
@@ -33,15 +38,16 @@ struct StoryBookView: View {
             // メインコンテンツ
             VStack(spacing: 0) {
                 
-                // ヘッダーの高さ分のスペースを確保
-                Spacer()
-                    .frame(height: 80)
+                // タイトルと上部スペースを管理する固定高さのコンテナ
+                VStack(spacing: 0) {
+                    Spacer()
+                    MainText(text: storyTitle, fontSize: titleFontSize)
+                        .padding(.bottom, 4) // 絵本との間隔を維持
+                }
+                .frame(height: 120) // 高さ固定（ヘッダー考慮）
                 
                 // メインコンテンツ
                 VStack(spacing: 4) {
-
-                    // 絵本のタイトル
-                    MainText(text: storyTitle)
                     
                     // 絵本エリア
                     if #available(iOS 15.0, *) {

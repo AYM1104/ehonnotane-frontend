@@ -34,6 +34,26 @@ struct Child_and_Page_Selection_View: View {
             } else {
                 LoadingOverlay(message: "読み込み中...")
             }
+            
+            // ヘッダー（ナビゲーション確認コールバック付き）
+            Header(
+                onLogoTap: { handleNavigationAttempt { coordinator.navigateToUploadImage() } },
+                onBookShelfTap: { handleNavigationAttempt { coordinator.navigateToBookShelf() } },
+                onMyPageTap: { handleNavigationAttempt { coordinator.navigateToMyPage() } }
+            )
+            
+            // モーダル表示
+            if showingCreditAlert {
+                CreditInsufficientModal(
+                    isPresented: $showingCreditAlert,
+                    requiredCredits: viewModel.requiredCredits,
+                    currentCredits: viewModel.currentCredits
+                ) {
+                    // TODO: クレジット追加画面への遷移
+                    print("クレジットを追加 tapped")
+                }
+                .zIndex(100) // 最前面に表示
+            }
         }
         .task {
             await loadInitialData()
@@ -59,6 +79,58 @@ struct Child_and_Page_Selection_View: View {
         }
     }
     
+    // 決定ボタン（共通部品）
+    private var decideButton: some View {
+        PrimaryButton(
+            title: "これにけってい",
+            style: .primary,
+            isLoading: viewModel.isLoading
+        ) {
+            if viewModel.hasInsufficientCredits {
+                showingCreditAlert = true
+            } else {
+                // 次の画面への遷移処理
+                Task {
+                    do {
+                        if let storySettingId = uploadResult?.storySettingId {
+                            try await viewModel.confirmSelection(storySettingId: storySettingId)
+                            
+                            // 画面遷移（子供が0人の場合はchildIdを0として扱う）
+                            if let storyPages = Int(viewModel.selectedPageCount) {
+                                // 選択された子供IDを取得（0人または1人の場合はviewModel側で適切に処理済みだが、念のため取得）
+                                // confirmSelectionでバリデーション済みなので、ここでは安全に取得できる
+                                // Note: viewModel.selectedChildが空でも、子供が0/1人の場合は問題ない
+                                let childId = Int(viewModel.selectedChild) ?? 0
+                                
+                                coordinator.navigateToQuestion(
+                                    storySettingId: storySettingId,
+                                    childId: childId,
+                                    storyPages: storyPages
+                                )
+                            }
+                        } else {
+                            print("❌ Upload result is missing")
+                            errorMessage = "アップロード情報が見つかりません"
+                            showingErrorAlert = true
+                        }
+                    } catch {
+                        print("❌ Confirmation failed: \(error)")
+                        
+                        // エラーメッセージの表示
+                        // バリデーションエラーの場合はuserInfoからメッセージを取得
+                        let nsError = error as NSError
+                        if nsError.domain == "Validation" {
+                            errorMessage = nsError.localizedDescription
+                        } else {
+                            errorMessage = "設定の保存に失敗しました: \(error.localizedDescription)"
+                        }
+                        showingErrorAlert = true
+                    }
+                }
+            }
+        }
+    }
+    
     @ViewBuilder
     private var mainContent: some View {
         VStack {
@@ -72,96 +144,100 @@ struct Child_and_Page_Selection_View: View {
             MainText(text: "つくろうかな？")
             Spacer()
         
-            // メインカード
-            mainCard(width: .screen95) {
-
-                // インナーカード
-                SelectInputBoxCard(
-                    title: "ページ数をえらんでね",
-                    options: viewModel.availablePageCountOptions,
-                    selection: $viewModel.selectedPageCount,
-                    subTitle: "消費クレジット: \(viewModel.requiredCredits)"
-                ) {
-                    // お子さまを選択 (2人以上の場合のみ表示)
-                    if viewModel.childrenCount >= 2 {
-                        VStack(spacing: 12) {
-                            SubText(text: "お子さまをえらんでね")
-                            Select_Input_Box(
-                                options: viewModel.childOptions,
-                                answer: $viewModel.selectedChild
-                            )
-                            .frame(maxWidth: 360)
-                        }
-                    }
-                } footer: {
-                    // ボタン
-                    PrimaryButton(
-                        title: "これにけってい",
-                        style: .primary,
-                        isLoading: viewModel.isLoading
-                    ) {
-                        if viewModel.hasInsufficientCredits {
-                            showingCreditAlert = true
-                        } else {
-                            // 次の画面への遷移処理
-                            Task {
-                                do {
-                                    if let storySettingId = uploadResult?.storySettingId {
-                                        try await viewModel.confirmSelection(storySettingId: storySettingId)
-                                        
-                                        // 画面遷移（子供が0人の場合はchildIdを0として扱う）
-                                        if let storyPages = Int(viewModel.selectedPageCount) {
-                                            let childId = Int(viewModel.selectedChild) ?? 0
-                                            coordinator.navigateToQuestion(
-                                                storySettingId: storySettingId,
-                                                childId: childId,
-                                                storyPages: storyPages  
-                                            )
-                                        }
-                                    } else {
-                                        print("❌ Upload result is missing")
-                                        errorMessage = "アップロード情報が見つかりません"
-                                        showingErrorAlert = true
-                                    }
-                                } catch {
-                                    print("❌ Confirmation failed: \(error)")
-                                    errorMessage = "設定の保存に失敗しました: \(error.localizedDescription)"
-                                    showingErrorAlert = true
+                if viewModel.childrenCount >= 2 {
+                    // 子供が2人以上の場合はカスタムスライダー形式
+                    
+                    // ページ定義
+                    let pages = [
+                        SelectionPage(type: .pageCount),
+                        SelectionPage(type: .childSelect)
+                    ]
+                    
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        
+                        PageSlider(pages, currentIndex: $viewModel.currentPageIndex) { page in
+                            
+                            switch page.type {
+                            case .pageCount:
+                                // 1ページ目：ページ数選択
+                                SelectInputBoxCard(
+                                    title: "ページ数をえらんでね",
+                                    options: viewModel.availablePageCountOptions,
+                                    selection: $viewModel.selectedPageCount,
+                                    subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                                ) {
+                                    EmptyView()
+                                } footer: {
+                                    // ボタンなし（スワイプで次へ）
+                                    Spacer().frame(height: 20)
                                 }
+                                .padding(.horizontal, 4) // カード間の余白調整（PageSliderのspacing考慮）
+                                
+                            case .childSelect:
+                                // 2ページ目：子供選択
+                                SelectInputBoxCard(
+                                    title: "お子さまをえらんでね",
+                                    options: viewModel.childOptions,
+                                    selection: $viewModel.selectedChild,
+                                    subTitle: nil
+                                ) {
+                                    EmptyView()
+                                } footer: {
+                                    // 決定ボタン
+                                    decideButton
+                                        .padding(.top, 16)
+                                }
+                                .padding(.horizontal, 4)
                             }
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        
+                        // ドットプログレスバー
+                        ProgressBar(
+                            totalSteps: 2,
+                            currentStep: viewModel.currentPageIndex,
+                            dotSize: 10,
+                            spacing: 12
+                        )
+                        .padding(.bottom, 16)
+                        
+                        Spacer(minLength: 0)
                     }
-                    .padding(.top, 16)
+                    
+                } else {
+                    // 子供が1人以下の場合は従来の単一カード表示
+                    SelectInputBoxCard(
+                        title: "ページ数をえらんでね",
+                        options: viewModel.availablePageCountOptions,
+                        selection: $viewModel.selectedPageCount,
+                        subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                    ) {
+                        EmptyView()
+                    } footer: {
+                        decideButton
+                            .padding(.top, 16)
+                    }
                 }
             }
             .padding(.bottom, -10)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        
-        // ヘッダー（ナビゲーション確認コールバック付き）
-        Header(
-            onLogoTap: { handleNavigationAttempt { coordinator.navigateToUploadImage() } },
-            onBookShelfTap: { handleNavigationAttempt { coordinator.navigateToBookShelf() } },
-            onMyPageTap: { handleNavigationAttempt { coordinator.navigateToMyPage() } }
-        )
-        
-        // モーダル表示
-        if showingCreditAlert {
-            CreditInsufficientModal(
-                isPresented: $showingCreditAlert,
-                requiredCredits: viewModel.requiredCredits,
-                currentCredits: viewModel.currentCredits
-            ) {
-                // TODO: クレジット追加画面への遷移
-                print("クレジットを追加 tapped")
-            }
-            .zIndex(100) // 最前面に表示
-        }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+    }
+    
+    // スライダー用ページモデル
+    private struct SelectionPage: Identifiable {
+        let id = UUID()
+        let type: PageType
+    }
+    
+    private enum PageType {
+        case pageCount
+        case childSelect
     }
     
     @MainActor
     private func loadInitialData() async {
-        guard !initialDataLoaded else { return }
+        // 毎回データをリロードする
         await viewModel.loadChildren()
         // story_setting_idを設定（uploadResultから取得）
         if let storySettingId = uploadResult?.storySettingId {
@@ -235,63 +311,126 @@ struct Child_and_Page_Selection_View_Preview: View {
             
                 // メインカード
                 mainCard(width: .screen95) {
-
-                    // インナーカード
+                    
+                    if viewModel.childrenCount >= 2 {
+                    // 子供が2人以上の場合はカスタムスライダー形式
+                    
+                    // ページ定義
+                    let pages = [
+                        SelectionPage(type: .pageCount),
+                        SelectionPage(type: .childSelect)
+                    ]
+                    
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        
+                        PageSlider(pages, currentIndex: $viewModel.currentPageIndex) { page in
+                            
+                            switch page.type {
+                            case .pageCount:
+                                // 1ページ目：ページ数選択
+                                SelectInputBoxCard(
+                                    title: "ページ数をえらんでね",
+                                    options: viewModel.availablePageCountOptions,
+                                    selection: $viewModel.selectedPageCount,
+                                    subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                                ) {
+                                    EmptyView()
+                                } footer: {
+                                    // ボタンなし（スワイプで次へ）
+                                    Spacer().frame(height: 20)
+                                }
+                                .padding(.horizontal, 4)
+                                
+                            case .childSelect:
+                                // 2ページ目：子供選択
+                                SelectInputBoxCard(
+                                    title: "お子さまをえらんでね",
+                                    options: viewModel.childOptions,
+                                    selection: $viewModel.selectedChild,
+                                    subTitle: nil
+                                ) {
+                                    EmptyView()
+                                } footer: {
+                                    // 決定ボタン
+                                    PrimaryButton(
+                                        title: "これにけってい",
+                                        style: .primary,
+                                        isLoading: viewModel.isLoading
+                                    ) {
+                                        // プレビュー用アクション
+                                    }
+                                    .padding(.top, 16)
+                                }
+                                .padding(.horizontal, 4)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        
+                        // ドットプログレスバー
+                        ProgressBar(
+                            totalSteps: 2,
+                            currentStep: viewModel.currentPageIndex,
+                            dotSize: 10,
+                            spacing: 12
+                        )
+                        .padding(.bottom, 16)
+                        
+                        Spacer(minLength: 0)
+                    }
+                    
+                } else {
+                    // 子供が1人以下の場合は従来の単一カード表示
                     SelectInputBoxCard(
                         title: "ページ数をえらんでね",
                         options: viewModel.availablePageCountOptions,
                         selection: $viewModel.selectedPageCount,
                         subTitle: "消費クレジット: \(viewModel.requiredCredits)"
                     ) {
-                        // お子さまを選択 (2人以上の場合のみ表示)
-                        if viewModel.childrenCount >= 2 {
-                            VStack(spacing: 12) {
-                                SubText(text: "お子さまをえらんでね")
-                                Select_Input_Box(
-                                    options: viewModel.childOptions,
-                                    answer: $viewModel.selectedChild
-                                )
-                                .frame(maxWidth: 360)
-                            }
-                        }
+                        EmptyView()
                     } footer: {
-                        // ボタン
                         PrimaryButton(
                             title: "これにけってい",
                             style: .primary,
                             isLoading: viewModel.isLoading
                         ) {
-                            // プレビューでは何もしない
+                            // プレビュー用アクション
                         }
                         .padding(.top, 16)
                     }
                 }
-                .padding(.bottom, -10)
-                
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .padding(.bottom, -10)
             
-            // ヘッダー
-            Header()
-            
-            // モーダル表示
-            if showingCreditAlert {
-                CreditInsufficientModal(
-                    isPresented: $showingCreditAlert,
-                    requiredCredits: viewModel.requiredCredits,
-                    currentCredits: viewModel.currentCredits
-                ) {
-                    print("クレジットを追加 tapped")
-                }
-                .zIndex(100)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        
+        // ヘッダー
+        Header()
+        
+        // モーダル表示
+        if showingCreditAlert {
+            CreditInsufficientModal(
+                isPresented: $showingCreditAlert,
+                requiredCredits: viewModel.requiredCredits,
+                currentCredits: viewModel.currentCredits
+            ) {
+                print("クレジットを追加 tapped")
             }
+            .zIndex(100)
         }
-        // エラーアラート
-        .alert("エラー", isPresented: $showingErrorAlert) {
-            Button("OK") { }
-        } message: {
-            Text(errorMessage)
-        }
+    }
+    }
+    
+    // スライダー用ページモデル（プレビュー用）
+    private struct SelectionPage: Identifiable {
+        let id = UUID()
+        let type: PageType
+    }
+    
+    private enum PageType {
+        case pageCount
+        case childSelect
     }
 }
 

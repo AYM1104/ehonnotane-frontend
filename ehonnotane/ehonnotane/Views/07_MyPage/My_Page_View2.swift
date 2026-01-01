@@ -11,6 +11,12 @@ struct My_Page_View2: View {
     // 選択されたタブを管理（子供の名前で管理）
     @State private var selectedTab: String? = nil
     
+    // お子様追加シート表示状態
+    @State private var showChildAddSheet: Bool = false
+    @State private var newChildName: String = ""
+    @State private var newChildBirthday: String = ""
+    @State private var newChildBirthDate: Date = Date()
+    
 
     
     var body: some View {
@@ -155,6 +161,16 @@ struct My_Page_View2: View {
                                     }
                                 )
                             }
+                            
+                            // お子様情報追加ボタン
+                            Button(action: {
+                                showChildAddSheet = true
+                            }) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(width: 32, height: 32)
+                            }
                         }
                         .padding(.horizontal, 24)
                         .padding(.top, 24)
@@ -255,6 +271,28 @@ struct My_Page_View2: View {
                 }
             }
         }
+        .sheet(isPresented: $showChildAddSheet) {
+            ChildAddSheetView(
+                childName: $newChildName,
+                childBirthday: $newChildBirthday,
+                childBirthDate: $newChildBirthDate,
+                onAdd: { name, birthDate in
+                    Task {
+                        await viewModel.addChild(name: name, birthDate: birthDate)
+                        // 新しい子供のタブを選択
+                        selectedTab = name
+                    }
+                    showChildAddSheet = false
+                    // フォームリセット
+                    newChildName = ""
+                    newChildBirthday = ""
+                    newChildBirthDate = Date()
+                }
+            )
+            .presentationDragIndicator(.visible)
+            .presentationDetents([.fraction(0.5)])
+            .presentationCornerRadius(32)
+        }
     }
     
     // MARK: - 統計アイテム
@@ -285,11 +323,14 @@ struct My_Page_View2: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
                 
-                // 選択されたタブには緑の下線を表示
+                // 選択されたタブには白い光る下線を表示
                 if isSelected {
                     Rectangle()
-                        .fill(Color.green)
+                        .fill(Color.white)
                         .frame(height: 2)
+                        .shadow(color: Color.white.opacity(0.8), radius: 4, x: 0, y: 0)
+                        .shadow(color: Color.white.opacity(0.6), radius: 8, x: 0, y: 0)
+                        .shadow(color: Color.white.opacity(0.4), radius: 12, x: 0, y: 0)
                 } else {
                     Rectangle()
                         .fill(Color.clear)

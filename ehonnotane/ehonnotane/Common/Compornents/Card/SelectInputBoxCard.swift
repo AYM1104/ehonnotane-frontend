@@ -68,6 +68,10 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
                             }
                         }
                         
+                        // 追加のコンテンツ（例：子供選択ボックス）をここに配置
+                        topContent
+                            .padding(.top, 40) // サブタイトルとの間隔を確保
+                        
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
