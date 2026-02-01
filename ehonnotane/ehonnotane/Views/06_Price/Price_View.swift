@@ -1,19 +1,35 @@
 import SwiftUI
+import StoreKit
 
 struct PriceView: View {
+    // StoreKit管理
+    @StateObject private var storeKitManager = StoreKitManager.shared
+    
     // 現在表示中のカードインデックス
     @State private var currentIndex: Int = 0
     // 横スクロールの現在位置（スナップ用）
     @State private var scrollOffset: CGFloat = 0
     // ドラッグ中の一時オフセット
     @State private var dragOffset: CGFloat = 0
+    
+    // エラーアラート
+    @State private var showingAlert = false
+    @State private var alertTitle = "エラー"
+    @State private var alertMessage = ""
 
     var body: some View {
         ZStack(alignment: .top) {
             // 背景
             Background {}
             
-            
+            // ローディング表示
+            if storeKitManager.isLoading {
+                ProgressView("処理中...")
+                    .padding()
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(10)
+                    .foregroundColor(.white)
+            }
         
             // メインカード（画面下部に配置）
             VStack {
@@ -34,6 +50,17 @@ struct PriceView: View {
             }
             // ヘッダー
             Header()
+        }
+        .alert(alertTitle, isPresented: $showingAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
+        .onAppear {
+            // プロダクト読み込み
+            Task {
+                await storeKitManager.loadProducts()
+            }
         }
         // .ignoresSafeArea()
     }
@@ -163,12 +190,22 @@ private extension PriceView {
     }
 
     func planPrice(for index: Int) -> String {
+        let productId: String
         switch index {
-        case 0: return "¥ 350"
-        case 1: return "¥ 500"
-        default: return "¥ 800"
+        case 0: productId = "com.ehonnotane.subscription.starter"
+        case 1: productId = "com.ehonnotane.subscription.plus"
+        default: productId = "com.ehonnotane.subscription.premium"
         }
+        
+        // StoreKitから動的に価格を取得
+        if let product = storeKitManager.availableProducts.first(where: { $0.id == productId }) {
+            return product.displayPrice
+        }
+        
+        // フォールバック（ローディング中など）
+        return "..."
     }
+
     
     // プランごとの毎月付与クレジット数
     // 数値は仮値。必要に応じて調整してください
@@ -205,9 +242,49 @@ private extension PriceView {
         let planName = planTitle(for: index)
         let price = planPrice(for: index)
         
-        // TODO: 実際の処理を実装
         print("選択されたプラン: \(planName) (\(price))")
-        // 例: 次の画面に遷移、APIリクエスト送信など
+        
+        // プロダクトIDを取得
+        let productId: String
+        switch index {
+        case 0:
+            productId = "com.ehonnotane.subscription.starter"
+        case 1:
+            productId = "com.ehonnotane.subscription.plus"
+        default:
+            productId = "com.ehonnotane.subscription.premium"
+        }
+        
+        // StoreKitManagerから該当プロダクトを検索
+        guard let product = storeKitManager.availableProducts.first(where: { $0.id == productId }) else {
+            alertTitle = "エラー"
+            alertMessage = "プロダクトが見つかりません。\n少し待ってから再度お試しください。"
+            showingAlert = true
+            return
+        }
+        
+        // 購入開始
+        Task {
+            do {
+                let transaction = try await storeKitManager.purchase(product)
+                print("✅ 購入完了: \(transaction.productID)")
+                
+                // 成功メッセージ
+                alertTitle = "完了"
+                alertMessage = "🎉 \(planName) の登録が完了しました！\n\nクレジットが付与されました。"
+                showingAlert = true
+                
+            } catch StoreKitError.purchaseCancelled {
+                print("ℹ️ ユーザーが購入をキャンセルしました")
+                // キャンセル時はアラート表示しない
+                
+            } catch {
+                print("❌ 購入エラー: \(error)")
+                alertTitle = "エラー"
+                alertMessage = "購入に失敗しました。\n\n\(error.localizedDescription)"
+                showingAlert = true
+            }
+        }
     }
 }
 

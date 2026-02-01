@@ -48,9 +48,12 @@ struct AuthProviderFactory {
         switch type {
         case .google:
             return GoogleAuthProvider()
-        case .apple, .line, .twitter:
-            // 未実装のプロバイダー
+        case .apple:
+            return AppleAuthProvider()
+        case .line, .twitter:
+            // LINE と Twitter は未実装
             fatalError("AuthProvider for \(type) is not implemented yet.")
         }
     }
 }
+

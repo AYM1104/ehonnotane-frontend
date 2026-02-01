@@ -11,6 +11,7 @@ struct Top_View: View {
     @EnvironmentObject var coordinator: AppCoordinator // AppCoordinatorへの参照
     @EnvironmentObject var authManager: AuthManager // AuthManagerへの参照
     @EnvironmentObject var googleProvider: GoogleAuthProvider // GoogleAuthProviderへの参照
+    @EnvironmentObject var appleProvider: AppleAuthProvider // AppleAuthProviderへの参照
     @EnvironmentObject var lineProvider: LineAuthProvider // LineAuthProviderへの参照
     @EnvironmentObject var twitterProvider: TwitterAuthProvider // TwitterAuthProviderへの参照
 
@@ -77,8 +78,7 @@ struct Top_View: View {
                     mode: loginModalMode,
                     // Appleログインを実行
                     onAppleLogin: {
-                        // TODO: Appleログインの実装
-                        authManager.errorMessage = "Appleログインは現在実装中です"
+                        appleProvider.login { _ in }
                     },
                     // Googleログインを実行
                     onGoogleLogin: {

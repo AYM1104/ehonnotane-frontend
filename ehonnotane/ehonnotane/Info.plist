@@ -19,9 +19,14 @@
 			<string>auth0</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.ehonnotane.ayu</string>
+				<string>com.ehonnotane.app</string>
 			</array>
 		</dict>
+	</array>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ja</string>
+		<string>en</string>
 	</array>
 </dict>
 </plist>

@@ -5,8 +5,12 @@ struct ehonnotaneApp: App {
     @StateObject private var coordinator = AppCoordinator()
     @StateObject private var authManager = AuthManager()
     @StateObject private var googleProvider = GoogleAuthProvider()
+    @StateObject private var appleProvider = AppleAuthProvider()
     @StateObject private var lineProvider = LineAuthProvider()
     @StateObject private var twitterProvider = TwitterAuthProvider()
+    
+    // StoreKitManagerはシングルトンを使用
+    private let storeKitManager = StoreKitManager.shared
     
     init() {
         FontRegistration.registerFonts()
@@ -14,6 +18,14 @@ struct ehonnotaneApp: App {
     
     var body: some Scene {
         WindowGroup {
+            // ===== StoreKit テスト用 (テスト完了後は下記をコメントアウトして、元のコードのコメントを解除) =====
+            /*
+            StoreKitTestView()
+                .environmentObject(storeKitManager)
+            */
+            
+            // ===== 元のコード (テスト完了後にコメント解除) =====
+            
             // ログイン状態に応じて画面を切り替え
             Group {
                 switch coordinator.currentScreen {
@@ -65,11 +77,14 @@ struct ehonnotaneApp: App {
             .environmentObject(coordinator)
             .environmentObject(authManager)
             .environmentObject(googleProvider)
+            .environmentObject(appleProvider)
             .environmentObject(lineProvider)
             .environmentObject(twitterProvider)
+            .environmentObject(storeKitManager)
             .onAppear {
                 // 認証プロバイダーにAuthManagerへの参照を設定
                 googleProvider.setAuthManager(authManager)
+                appleProvider.setAuthManager(authManager)
                 lineProvider.setAuthManager(authManager)
                 twitterProvider.setAuthManager(authManager)
                 
@@ -89,6 +104,12 @@ struct ehonnotaneApp: App {
                     }
                 }
             }
+            .onOpenURL { url in
+                print("🔗 App: URLを受け取りました: \(url.absoluteString)")
+                // Auth0のコールバックURLを処理
+                // Auth0 SDKが自動的に処理するため、特別な処理は不要
+            }
+
         }
     }
 }

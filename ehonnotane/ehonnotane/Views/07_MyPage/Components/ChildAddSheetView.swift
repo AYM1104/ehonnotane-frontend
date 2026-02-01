@@ -147,6 +147,10 @@ struct ChildAddSheetView: View {
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                         .frame(maxWidth: .infinity)
+                        .frame(height: 216)
+                        .clipped()
+                        .environment(\.colorScheme, .light)
+                        .tint(.black)
                         .background(Color.white)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))

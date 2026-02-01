@@ -16,8 +16,8 @@ struct EnhancedGenerationProgressView: View {
     
     var body: some View {
         ZStack {
-            // 半透明背景
-            Color.black.opacity(0.85)
+            // 不透明背景（背後のカードが透けないようにする）
+            Color.black.opacity(0.95)
                 .ignoresSafeArea()
             
             VStack(spacing: 24) {

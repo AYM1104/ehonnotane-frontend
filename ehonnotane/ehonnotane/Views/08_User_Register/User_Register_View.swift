@@ -128,7 +128,6 @@ struct User_Register_View: View {
                 content()
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 16)
         } else {
             InnerCard2 {
                 content()

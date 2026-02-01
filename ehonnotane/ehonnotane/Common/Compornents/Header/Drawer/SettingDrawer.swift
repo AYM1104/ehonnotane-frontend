@@ -11,6 +11,10 @@ struct SettingDrawer: View {
     // アカウント削除画面の表示フラグ
     @State private var showAccountDeletion = false
     
+    // 利用規約・プライバシーポリシー表示フラグ
+    @State private var showTermsOfService = false
+    @State private var showPrivacyPolicy = false
+    
     // ナビゲーション割り込み用のコールバック（オプショナル）
     var onMyPageTap: (() -> Void)? = nil
     
@@ -77,13 +81,13 @@ struct SettingDrawer: View {
                             // 項目リスト
                             VStack(alignment: .leading, spacing: 12) {
                                 DrawerItemRow(
-                                    title: "保有クレジット",
+                                    title: String(localized: "settings.credits"),
                                     icon: Image("icon-coin")
                                 ) {
                                     // TODO: 保有クレジット画面へ遷移
                                 }
                                 DrawerItemRow(
-                                    title: "マイページ",
+                                    title: String(localized: "settings.mypage"),
                                     icon: Image("icon-face")
                                 ) {
                                     // コールバックが提供されている場合はそれを呼び出し、なければ直接遷移
@@ -113,19 +117,19 @@ struct SettingDrawer: View {
                                     }
                                 }
                                 DrawerItemRow(
-                                    title: "利用規約",
+                                    title: String(localized: "settings.terms"),
                                     icon: Image("icon-info")
                                 ) {
-                                    // TODO: 利用規約の表示
+                                    showTermsOfService = true
                                 }
                                 DrawerItemRow(
-                                    title: "プライバシーポリシー",
+                                    title: String(localized: "settings.privacy"),
                                     icon: Image("icon-lock")
                                 ) {
-                                    // TODO: プライバシーポリシーの表示
+                                    showPrivacyPolicy = true
                                 }
                                 DrawerItemRow(
-                                    title: "ログアウト",
+                                    title: String(localized: "settings.logout"),
                                     icon: Image("icon-logout")
                                 ) {
                                     // ドロワーを閉じてからログアウト処理を実行
@@ -143,7 +147,7 @@ struct SettingDrawer: View {
                                     }
                                 }
                                 DrawerItemRow(
-                                    title: "アカウント削除",
+                                    title: String(localized: "settings.delete_account"),
                                     icon: Image("icon-delete-trash")
                                 ) {
                                     print("🗑️ アカウント削除ボタンがタップされました")
@@ -189,6 +193,14 @@ struct SettingDrawer: View {
             AccountDeletionView()
                 .environmentObject(authManager)
                 .environmentObject(coordinator)
+        }
+        // 利用規約表示
+        .sheet(isPresented: $showTermsOfService) {
+            LegalDocumentView(documentType: .termsOfService)
+        }
+        // プライバシーポリシー表示
+        .sheet(isPresented: $showPrivacyPolicy) {
+            LegalDocumentView(documentType: .privacyPolicy)
         }
     }
 }

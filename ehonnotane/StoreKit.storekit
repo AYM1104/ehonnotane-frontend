@@ -1,0 +1,123 @@
+{
+  "identifier" : "54FA9BE2",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6738927405",
+    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_lastSynchronizedDate" : 757447344.58110702
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21484588",
+      "localizations" : [
+        {
+          "description" : "えほんのたね サブスクリプション - 毎月クレジットを獲得して、素敵な絵本をたくさん作ろう！",
+          "displayName" : "えほんのたね サブスクリプション",
+          "locale" : "ja"
+        }
+      ],
+      "name" : "ehonnotane_subscriptions",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "350",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6738928001",
+          "introductoryOffer" : {
+            "internalID" : "6738928101",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "はじめての ものがたり におすすめ。毎月350クレジットをご利用いただけます。",
+              "displayName" : "はじめてのたね",
+              "locale" : "ja"
+            }
+          ],
+          "productID" : "com.ehonnotane.subscription.starter",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "はじめてのたね Starter",
+          "subscriptionGroupID" : "21484588",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "500",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6738928002",
+          "introductoryOffer" : {
+            "internalID" : "6738928102",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "たくさん そだてたい きみに。毎月700クレジットをご利用いただけます。",
+              "displayName" : "そだてるたね",
+              "locale" : "ja"
+            }
+          ],
+          "productID" : "com.ehonnotane.subscription.plus",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "そだてるたね Plus",
+          "subscriptionGroupID" : "21484588",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "800",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6738928003",
+          "introductoryOffer" : {
+            "internalID" : "6738928103",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "みんなで たのしむ ぜいたくプラン。毎月1200クレジットをご利用いただけます。",
+              "displayName" : "わくわくのたね",
+              "locale" : "ja"
+            }
+          ],
+          "productID" : "com.ehonnotane.subscription.premium",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "わくわくのたね Premium",
+          "subscriptionGroupID" : "21484588",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
