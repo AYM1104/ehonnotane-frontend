@@ -49,7 +49,15 @@ class StoryService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = ["story_setting_id": storySettingId]
+        
+        // ユーザーの言語設定を取得（日本語: "ja", 英語: "en" など）
+        let languageCode = Locale.current.language.languageCode?.identifier ?? "ja"
+        let body: [String: Any] = [
+            "story_setting_id": storySettingId,
+            "language": languageCode
+        ]
+        print("🌐 [テーマ生成] 言語設定: \(languageCode)")
+        
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             

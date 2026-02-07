@@ -66,10 +66,15 @@ public class StoryGenerationService {
             throw StorybookAPIError.serverError(401, "認証が必要です")
         }
         
+        // ユーザーの言語設定を取得（日本語: "ja", 英語: "en" など）
+        let languageCode = Locale.current.language.languageCode?.identifier ?? "ja"
+        print("🌐 物語生成 言語設定: \(languageCode)")
+        
         let requestBody: [String: Any] = [
             "story_setting_id": storySettingId,
             "selected_theme": selectedTheme,
-            "story_pages": storyPages
+            "story_pages": storyPages,
+            "language": languageCode
         ]
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: requestBody),
@@ -271,19 +276,19 @@ public class StoryGenerationService {
             let storybookResponse = try await createStorybook(storyPlotId: storyResponse.storyPlotId, selectedTheme: storyResponse.selectedTheme, childId: childId, storyPages: storyPages)
             storybookId = storybookResponse.storybookId
             
-            // ステップ3: 画像生成はフロント側のポーリングに委ねるため、ここではキックだけ行い即返す
-            print("🎨 Step 3: Generating images (kick only, no wait)...")
-            Task.detached(priority: .background) { [weak self] in
-                guard let self else { return }
-                do {
-                    _ = try await self.generateStoryImages(storybookId: storybookResponse.storybookId)
-                    _ = try await self.updateImageUrls(storybookId: storybookResponse.storybookId)
-                } catch {
-                    print("⚠️ Image generation (fire-and-forget) failed: \(error)")
-                }
+            // ステップ3: 画像生成をCloud Tasksにキック（Cloud Runがバックグラウンドで処理）
+            print("🎨 Step 3: Kicking off image generation (Cloud Tasks)...")
+            do {
+                _ = try await self.generateStoryImages(storybookId: storybookResponse.storybookId)
+                print("✅ Image generation task queued successfully")
+            } catch {
+                print("⚠️ Image generation task queueing failed: \(error)")
+                // 画像生成のキューイングに失敗してもストーリーブックは作成済みなので継続
+                // ステータスは「pending」のままで、ユーザーが後で再試行可能
             }
             
-            print("✅ Theme selection flow completed successfully (images are generating): storybookId=\(storybookResponse.storybookId)")
+            print("✅ Theme selection flow completed successfully: storybookId=\(storybookResponse.storybookId)")
+            print("   画像生成はバックグラウンドで実行中です。進捗はポーリングで確認してください。")
             return storybookResponse.storybookId
             
         } catch {
