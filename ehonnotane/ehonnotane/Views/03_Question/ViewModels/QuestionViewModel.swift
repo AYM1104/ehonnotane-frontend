@@ -15,7 +15,7 @@ class QuestionViewModel: ObservableObject {
     @Published var alertMessage = ""
     
     @Published var isLoadingQuestions = false
-    @Published var loadingMessage = "読み込み中..."
+    @Published var loadingMessage = String(localized: "common.loading")
     
     // 呼び出し元から渡されるデータ
     let storySettingId: Int
@@ -58,7 +58,7 @@ class QuestionViewModel: ObservableObject {
     
     func loadQuestions() async {
         print("🔄 質問の読み込みを開始します")
-        loadingMessage = "読み込み中..."
+        loadingMessage = String(localized: "common.loading")
         isLoadingQuestions = true
         
         do {
@@ -72,7 +72,7 @@ class QuestionViewModel: ObservableObject {
             print("❌ 質問の取得に失敗しました: \(error)")
             await MainActor.run {
                 isLoadingQuestions = false
-                self.alertMessage = "質問の読み込みに失敗しました: \(error.localizedDescription)"
+                self.alertMessage = String(localized: "question.load_failed")
                 self.showAlert = true
             }
         }
@@ -120,7 +120,7 @@ class QuestionViewModel: ObservableObject {
         }
         
         print("🔄 回答送信処理を開始します")
-        loadingMessage = "回答を送信中..."
+        loadingMessage = String(localized: "question.submitting")
         isSubmitting = true
         
         Task {
@@ -158,7 +158,7 @@ class QuestionViewModel: ObservableObject {
                 do {
                     print("🔄 [QuestionViewModel] テーマ生成開始")
                     await MainActor.run {
-                        loadingMessage = "テーマを考えているよ..."
+                        loadingMessage = String(localized: "theme.generating")
                     }
                     try await StoryService.shared.generateThemes(storySettingId: storySettingId)
                     let themeDuration = Date().timeIntervalSince(themeStartTime)
@@ -190,7 +190,7 @@ class QuestionViewModel: ObservableObject {
                 // メインスレッドでエラーを表示
                 await MainActor.run {
                     isSubmitting = false
-                    alertMessage = "回答の送信に失敗しました: \(error.localizedDescription)"
+                    alertMessage = String(localized: "question.submit_failed")
                     showAlert = true
                 }
             }

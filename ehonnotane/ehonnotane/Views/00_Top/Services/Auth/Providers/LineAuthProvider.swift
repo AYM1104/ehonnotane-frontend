@@ -59,7 +59,10 @@ class LineAuthProvider: ObservableObject, AuthProvider {
             .webAuth(clientId: clientId, domain: domain)
             .scope("openid profile email")
             .audience(audience)
-            .parameters(["connection": "line"]) // LINEプロバイダーを指定
+            .parameters([
+                "connection": "line",
+                "ui_locales": Locale.preferredLanguages.first ?? "en"
+            ]) // LINEプロバイダーを指定 + 多言語対応
             .start { [weak self] result in
                 DispatchQueue.main.async {
                     self?.handleAuthResult(result, completion: completion)

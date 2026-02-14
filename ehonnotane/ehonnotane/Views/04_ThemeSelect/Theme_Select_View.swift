@@ -31,8 +31,8 @@ struct Theme_Select_View: View {
                     .frame(height: 80)
 
                 // メインテキストを表示
-                MainText(text: "どんな えほんを")
-                MainText(text: "つくろうかな？")
+                MainText(text: String(localized: "theme.title_line1"))
+                MainText(text: String(localized: "theme.title_line2"))
                 Spacer()
             
                 // メインカード
@@ -51,11 +51,11 @@ struct Theme_Select_View: View {
                                         .multilineTextAlignment(.center)
                                         .padding()
                                 } else {
-                                    Text("テーマが見つかりませんでした")
+                                    Text(String(localized: "theme.no_themes"))
                                         .foregroundColor(.gray)
                                 }
                                 
-                                Button("再読み込み") {
+                                Button(String(localized: "common.reload")) {
                                     Task {
                                         await viewModel.loadThemeData(coordinator: coordinator)
                                     }
@@ -104,21 +104,7 @@ struct Theme_Select_View: View {
                 onMyPageTap: { handleNavigationAttempt { coordinator.navigateToMyPage() } }
             )
             
-            // クレジット不足モーダル
-            if viewModel.showCreditInsufficientModal {
-                CreditInsufficientModal(
-                    isPresented: $viewModel.showCreditInsufficientModal,
-                    requiredCredits: viewModel.requiredCredits,
-                    currentCredits: viewModel.currentCredits,
-                    onAddCredit: {
-                        // TODO: クレジットチャージ画面への遷移を実装
-                        print("クレジットチャージ画面へ遷移")
-                        // coordinator.navigateToCreditCharge() などを実装
-                    }
-                )
-            }
-            
-            // 生成中プログレスオーバーレイ
+            // 生成中プログレスオーバーレイ（画面中央モーダル）
             if viewModel.isGeneratingImages {
                 EnhancedGenerationProgressView(
                     progress: viewModel.progressPercentage,
@@ -130,8 +116,21 @@ struct Theme_Select_View: View {
                     generatedPreviews: viewModel.generatedPagePreviews
                 )
                 .transition(.opacity)
-                .zIndex(100)
             }
+            
+            // クレジット不足モーダル
+            if viewModel.showCreditInsufficientModal {
+                CreditInsufficientModal(
+                    isPresented: $viewModel.showCreditInsufficientModal,
+                    requiredCredits: viewModel.requiredCredits,
+                    currentCredits: viewModel.currentCredits,
+                    onAddCredit: {
+                        coordinator.navigateToPrice()
+                    }
+                )
+            }
+            
+
         }
         .onAppear {
             Task {
@@ -139,8 +138,8 @@ struct Theme_Select_View: View {
             }
         }
         // ナビゲーション確認アラート
-        .alert("確認", isPresented: $showNavigationAlert) {
-            Button("キャンセル", role: .cancel) {
+        .alert(String(localized: "common.confirmation"), isPresented: $showNavigationAlert) {
+            Button(String(localized: "common.cancel"), role: .cancel) {
                 pendingNavigationAction = nil
             }
             Button("OK", role: .destructive) {
@@ -149,7 +148,7 @@ struct Theme_Select_View: View {
                 }
             }
         } message: {
-            Text("これまでの操作が保存されずに画面が移動します。よろしいですか？")
+            Text(String(localized: "theme.navigation_warning"))
         }
     }
     
@@ -223,8 +222,8 @@ struct Theme_Select_View_Loading_Preview: View {
                     .frame(height: 80)
 
                 // メインテキストを表示
-                MainText(text: "どんな えほんを")
-                MainText(text: "つくろうかな？")
+                MainText(text: String(localized: "theme.title_line1"))
+                MainText(text: String(localized: "theme.title_line2"))
                 Spacer()
             
                 // メインカード
@@ -243,11 +242,11 @@ struct Theme_Select_View_Loading_Preview: View {
                                         .multilineTextAlignment(.center)
                                         .padding()
                                 } else {
-                                    Text("テーマが見つかりませんでした")
+                                    Text(String(localized: "theme.no_themes"))
                                         .foregroundColor(.gray)
                                 }
                                 
-                                Button("再読み込み") {
+                                Button(String(localized: "common.reload")) {
                                     Task {
                                         await viewModel.loadThemeData(coordinator: coordinator)
                                     }

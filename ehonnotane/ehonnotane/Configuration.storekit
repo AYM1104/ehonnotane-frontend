@@ -8,7 +8,7 @@
   ],
   "settings" : {
     "_applicationInternalID" : "6738927405",
-    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_developerTeamID" : "U6899AFK9R",
     "_lastSynchronizedDate" : 757447344.58110702
   },
   "subscriptionGroups" : [
@@ -30,7 +30,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "350",
+          "displayPrice" : "500",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6738928001",
@@ -42,7 +42,7 @@
           },
           "localizations" : [
             {
-              "description" : "はじめての ものがたり におすすめ。毎月350クレジットをご利用いただけます。",
+              "description" : "はじめての ものがたり におすすめ。毎月600クレジットをご利用いただけます。",
               "displayName" : "はじめてのたね",
               "locale" : "ja"
             }
@@ -60,7 +60,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "500",
+          "displayPrice" : "800",
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "6738928002",
@@ -72,7 +72,7 @@
           },
           "localizations" : [
             {
-              "description" : "たくさん そだてたい きみに。毎月700クレジットをご利用いただけます。",
+              "description" : "たくさん そだてたい きみに。毎月1000クレジットをご利用いただけます。",
               "displayName" : "そだてるたね",
               "locale" : "ja"
             }
@@ -90,7 +90,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "800",
+          "displayPrice" : "1200",
           "familyShareable" : false,
           "groupNumber" : 3,
           "internalID" : "6738928003",
@@ -102,7 +102,7 @@
           },
           "localizations" : [
             {
-              "description" : "みんなで たのしむ ぜいたくプラン。毎月1200クレジットをご利用いただけます。",
+              "description" : "みんなで たのしむ ぜいたくプラン。毎月1500クレジットをご利用いただけます。",
               "displayName" : "わくわくのたね",
               "locale" : "ja"
             }

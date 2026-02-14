@@ -41,7 +41,7 @@ class BookFromAPIModel: ObservableObject {
     
     // タイトルを外部から取得できるように公開
     var storyTitle: String {
-        storybook?.title ?? "絵本を読み込み中..."
+        storybook?.title ?? String(localized: "book.loading_title")
     }
     
     /// 絵本データを読み込む
@@ -92,7 +92,7 @@ class BookFromAPIModel: ObservableObject {
             DispatchQueue.main.async {
                 print("❌ Error loading storybook: \(error)")
                 self.errorMessage = error.localizedDescription
-                self.onTitleUpdate?("エラーが発生しました")
+                self.onTitleUpdate?(String(localized: "common.error_occurred"))
                 self.isLoading = false
             }
         }
@@ -143,7 +143,7 @@ class BookFromAPIModel: ObservableObject {
     }
     
     var generationMessage: String {
-        progressMonitor?.generationMessage ?? "絵本の絵を描いています..."
+        progressMonitor?.generationMessage ?? String(localized: "book.generating_images")
     }
     
     /// StoryからBookページを作成
@@ -209,7 +209,7 @@ private struct BookFromAPIView: View {
                 VStack(spacing: 20) {
                     ProgressView()
                         .scaleEffect(1.5)
-                    Text("絵本を読み込んでいます...")
+                    Text(String(localized: "book.loading_message"))
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
@@ -220,7 +220,7 @@ private struct BookFromAPIView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 50))
                         .foregroundColor(.orange)
-                    Text("エラーが発生しました")
+                    Text(String(localized: "common.error_occurred"))
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -230,7 +230,7 @@ private struct BookFromAPIView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                     
-                    Button("再試行") {
+                    Button(String(localized: "common.retry")) {
                         Task {
                             await viewModel.loadStorybook()
                         }
@@ -255,7 +255,7 @@ private struct BookFromAPIView: View {
 //                            )
                             
                             // ページ進捗表示
-                            Text("\(viewModel.currentGeneratingPage)/\(viewModel.totalPages)ページ生成中...")
+                            Text(String(localized: "book.generating_pages \(viewModel.currentGeneratingPage) \(viewModel.totalPages)"))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -296,7 +296,7 @@ private struct BookFromAPIView: View {
                     Image(systemName: "book.closed")
                         .font(.system(size: 50))
                         .foregroundColor(.primary)
-                    Text("絵本を読み込み中...")
+                    Text(String(localized: "book.loading_title"))
                         .font(.headline)
                         .foregroundColor(.primary)
                 }

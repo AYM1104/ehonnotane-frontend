@@ -104,7 +104,7 @@ struct ThemeDetailCard: View {
     }
 }
 
-#Preview("画像生成中") {
+#Preview("画像生成中（プログレスオーバーレイ）") {
     ZStack(alignment: .top) {
         // 背景
         Background {
@@ -140,27 +140,21 @@ struct ThemeDetailCard: View {
                         }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                    // 画像生成中の進捗表示
-                    VStack(spacing: 12) {
-                        ProgressBar(
-                            totalSteps: 10,
-                            currentStep: 6
-                        )
-                        .padding(.horizontal, 20)
-                        
-                        // 進捗メッセージ
-                        SubText(
-                            text: "画像を生成しています...",
-                            fontSize: 14
-                        )
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 20)
-                    }
                 }
             }
             .padding(.bottom, -10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        
+        // 生成中プログレスオーバーレイ（画面中央モーダル）
+        EnhancedGenerationProgressView(
+            progress: 0.65,
+            message: "絵を描いています... (4/5ページ)",
+            estimatedTime: "残り約45秒",
+            currentTip: "🎨 きれいな いろで ぬっているよ",
+            totalPages: 5,
+            currentPage: 4,
+            generatedPreviews: [:]
+        )
     }
 }

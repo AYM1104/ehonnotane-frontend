@@ -27,7 +27,7 @@ struct CreditInsufficientModal: View {
                     .padding(.bottom, 16)
                 
                 // タイトル
-                Text("クレジットが不足しています")
+                Text(String(localized: "credit.insufficient_title"))
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255)) // #362D30
                     .padding(.bottom, 24)
@@ -35,7 +35,7 @@ struct CreditInsufficientModal: View {
                 // クレジット情報
                 VStack(spacing: 8) {
                     HStack {
-                        Text("必要クレジット：")
+                        Text(String(localized: "credit.required_label"))
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                         Text("\(requiredCredits)")
@@ -44,7 +44,7 @@ struct CreditInsufficientModal: View {
                     }
                     
                     HStack {
-                        Text("保有クレジット：")
+                        Text(String(localized: "credit.current_label"))
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                         Text("\(currentCredits)")
@@ -58,7 +58,7 @@ struct CreditInsufficientModal: View {
                 HStack(spacing: 12) {
                     // 後にするボタン
                     PrimaryButton(
-                        title: "後にする",
+                        title: String(localized: "common.later"),
                         style: .secondary,
                         width: nil, // 幅を自動調整
                         fontSize: 14,
@@ -71,7 +71,7 @@ struct CreditInsufficientModal: View {
                     
                     // チャージするボタン
                     PrimaryButton(
-                        title: "チャージする",
+                        title: String(localized: "common.charge"),
                         style: .primary,
                         width: nil, // 幅を自動調整
                         fontSize: 14,

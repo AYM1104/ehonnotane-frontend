@@ -34,7 +34,7 @@ struct UserInfo {
     let picture: String?
     
     var displayName: String {
-        return name ?? email ?? "ユーザー"
+        return name ?? email ?? String(localized: "user.default_name")
     }
 }
 

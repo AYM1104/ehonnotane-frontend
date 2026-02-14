@@ -314,5 +314,30 @@ class CalendarViewModel: ObservableObject {
             }
         }
     }
+    
+    /// 絵本を削除する（API完了を待つ）
+    func deleteStorybook(storybookId: Int) async {
+        // 1. UIを即座に更新（楽観的更新）
+        guard let index = storybooks.firstIndex(where: { $0.id == storybookId }) else { return }
+        let deletedBook = storybooks[index]
+        storybooks.remove(at: index)
+        
+        // 2. API呼び出しの完了を待つ
+        do {
+            try await storybookService.deleteStorybook(storybookId: storybookId)
+            print("✅ 絵本を削除しました: \(storybookId)")
+            // マーク済み日付を更新（削除後にその日の絵本がなくなる場合）
+            if isWeekMode {
+                fetchMarkedDatesForWeek()
+            } else {
+                fetchMarkedDatesForMonth()
+            }
+        } catch {
+            // 3. エラー時は元の状態に戻す（ロールバック）
+            print("❌ 絵本削除エラー: \(error)")
+            storybooks.insert(deletedBook, at: min(index, storybooks.count))
+            errorMessage = "絵本の削除に失敗しました"
+        }
+    }
 }
 

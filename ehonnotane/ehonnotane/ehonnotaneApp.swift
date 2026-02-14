@@ -1,7 +1,11 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct ehonnotaneApp: App {
+    // AppDelegateを統合（プッシュ通知対応）
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     @StateObject private var coordinator = AppCoordinator()
     @StateObject private var authManager = AuthManager()
     @StateObject private var googleProvider = GoogleAuthProvider()
@@ -49,7 +53,7 @@ struct ehonnotaneApp: App {
                         )
                     } else {
                         // データがない場合はエラー表示または戻る
-                        Text("エラー: データが見つかりません")
+                        Text(String(localized: "error.data_not_found"))
                             .onAppear {
                                 coordinator.navigateToTop()
                             }
@@ -61,7 +65,7 @@ struct ehonnotaneApp: App {
                         StoryBookView(storybookId: storybookId)
                     } else {
                         // データがない場合はエラー表示または戻る
-                        Text("エラー: ストーリーブックIDが見つかりません")
+                        Text(String(localized: "error.storybook_not_found"))
                             .onAppear {
                                 coordinator.navigateToTop()
                             }
@@ -91,6 +95,13 @@ struct ehonnotaneApp: App {
                 // 起動時にログイン状態を確認
                 authManager.checkLoginStatus()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .didReceiveStorybookNotification)) { notification in
+                // プッシュ通知から絵本を開く
+                if let storybookId = notification.userInfo?["storybook_id"] as? Int {
+                    print("📬 通知から絵本を開きます: ID=\(storybookId)")
+                    coordinator.navigateToStorybook(storybookId: storybookId)
+                }
+            }
             .onChange(of: authManager.isLoggedIn) { (oldValue: Bool, newValue: Bool) in
                 // ログイン成功時に画像アップロード画面に遷移
                 if !oldValue && newValue {
@@ -102,6 +113,9 @@ struct ehonnotaneApp: App {
                         print("🔄 既存ユーザー -> 画像アップロード画面へ遷移")
                         coordinator.navigateToUploadImage()
                     }
+                    
+                    // ログイン後にプッシュ通知の許可をリクエスト
+                    PushNotificationManager.shared.requestNotificationPermission()
                 }
             }
             .onOpenURL { url in

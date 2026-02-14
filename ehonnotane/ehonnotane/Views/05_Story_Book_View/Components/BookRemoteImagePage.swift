@@ -40,8 +40,8 @@ public struct BookRemoteImagePage: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            // 画像エリア
+        ZStack(alignment: .bottom) {
+            // 画像エリア（フルサイズ）
             GeometryReader { geo in
                 let w = geo.size.width
                 let imageHeight = geo.size.height
@@ -53,20 +53,29 @@ public struct BookRemoteImagePage: View {
                     height: imageHeight
                 )
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // テキストエリア
-            if let text = text {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        SubText(text: text, fontSize: 20)
-                            .padding(.horizontal, 16)
-                            .lineSpacing(4)
+            // テキストカードオーバーレイ
+            if let text = text, !text.isEmpty {
+                InnerCard(
+                    cornerRadius: 20,
+                    horizontalPadding: 0,
+                    verticalPadding: 24,
+                    outerPadding: 16
+                ) {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            SubText(text: text, fontSize: 18)
+                                .lineSpacing(6)
+                                .padding(.horizontal, 18)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 6)
                 }
                 .frame(height: textAreaHeight)
-                .frame(maxWidth: .infinity, alignment: .top)
-                .background(background)
+                .padding(.bottom, 8)
             }
         }
         .background(background)
@@ -82,6 +91,36 @@ public struct BookRemoteImagePage: View {
         }
     }
 }
+
+#if DEBUG
+struct BookRemoteImagePage_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // テキストあり（通常ページ）
+            if #available(iOS 15.0, macOS 12.0, *) {
+                BookRemoteImagePage(
+                    URL(string: "https://picsum.photos/seed/ehon-page1/900/1600")!,
+                    fit: .fill,
+                    text: "ある日、ちいさなタネが風に乗って森へたどり着きました。\n森の動物たちが集まってきて、これから何が起こるのかドキドキしています。",
+                    textAreaHeight: 150
+                )
+                .previewDisplayName("通常ページ")
+            }
+
+            // テキストなし（表紙など）
+            if #available(iOS 15.0, macOS 12.0, *) {
+                BookRemoteImagePage(
+                    URL(string: "https://picsum.photos/seed/ehon-cover/900/1600")!,
+                    fit: .fill,
+                    text: nil,
+                    textAreaHeight: 0
+                )
+                .previewDisplayName("表紙（テキストなし）")
+            }
+        }
+    }
+}
+#endif
 
 // MARK: - 画像読み込みユーティリティ
 

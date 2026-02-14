@@ -28,5 +28,7 @@
 		<string>ja</string>
 		<string>en</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>プロフィール画像や絵本の画像を設定するために写真ライブラリにアクセスします。</string>
 </dict>
 </plist>

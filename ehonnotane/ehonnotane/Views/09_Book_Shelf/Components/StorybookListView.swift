@@ -9,8 +9,11 @@ struct StorybookListView: View {
     var availableHeight: CGFloat? = nil // 利用可能な高さ（nilの場合は制限なし）
     let children: [Child] // 子供のリスト
     let onFavoriteTap: ((Int) -> Void)? // お気に入りタップのコールバック
+    let onDeleteTap: ((Int) -> Void)? // 削除タップのコールバック
     
     @State private var showFilterSheet = false // フィルターシートの表示状態
+    @State private var showDeleteAlert = false // 削除確認ダイアログの表示状態
+    @State private var storybookToDelete: StoryBookListItem? = nil // 削除対象の絵本
     
     @EnvironmentObject var coordinator: AppCoordinator
     
@@ -62,7 +65,7 @@ struct StorybookListView: View {
                                     )
                             )
                         } else {
-                            Text("すべて")
+                            Text(String(localized: "filter.all"))
                                 .font(.custom("YuseiMagic-Regular", size: 14))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 8)
@@ -151,39 +154,42 @@ struct StorybookListView: View {
                 }
                 .frame(maxHeight: availableHeight)
             } else if storybooks.isEmpty {
-                Text(selectedDate == nil ? "絵本がありません" : "この日に作成した絵本はありません")
+                Text(selectedDate == nil ? String(localized: "bookshelf.no_books") : String(localized: "bookshelf.no_books_on_date"))
                     .font(.custom("YuseiMagic-Regular", size: 14))
                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255).opacity(0.6))
                     .padding()
                     .frame(maxHeight: availableHeight)
             } else {
                 // スクロール可能な絵本一覧
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(storybooks) { storybook in
-                            StorybookListItemView(
-                                storybook: storybook,
-                                children: children,
-                                onChildTagTap: { childId in
-                                    // 子供の名前タグをタップしたときにフィルターを適用
-                                    selectedChildId = childId
-                                },
-                                onFavoriteTap: { storybookId in
-                                    // お気に入りをタップしたときにViewModelに通知
-                                    onFavoriteTap?(storybookId)
-                                }
-                            )
-                            
-                            if storybook.id != storybooks.last?.id {
-                                Divider()
-                                    .background(Color.gray.opacity(0.3))
+                List {
+                    ForEach(storybooks) { storybook in
+                        StorybookListItemView(
+                            storybook: storybook,
+                            children: children,
+                            onChildTagTap: { childId in
+                                // 子供の名前タグをタップしたときにフィルターを適用
+                                selectedChildId = childId
+                            },
+                            onFavoriteTap: { storybookId in
+                                // お気に入りをタップしたときにViewModelに通知
+                                onFavoriteTap?(storybookId)
+                            }
+                        )
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                storybookToDelete = storybook
+                                showDeleteAlert = true
+                            } label: {
+                                Label(String(localized: "common.delete"), systemImage: "trash")
                             }
                         }
+                        .listRowSeparator(.visible)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                        .listRowBackground(Color.clear)
                     }
-                    .padding(.leading, 8)
-                    .padding(.trailing, 8) // 右側の余白を減らして右にずらす
-                    .padding(.vertical, 16)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
                 .frame(maxHeight: availableHeight) // 利用可能な高さに制限
             }
         }
@@ -194,6 +200,18 @@ struct StorybookListView: View {
                 children: children
             )
             .presentationDetents([.medium, .large])
+        }
+        .alert(
+            String(localized: "bookshelf.delete_confirm_title"),
+            isPresented: $showDeleteAlert,
+            presenting: storybookToDelete
+        ) { storybook in
+            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(String(localized: "common.delete"), role: .destructive) {
+                onDeleteTap?(storybook.id)
+            }
+        } message: { storybook in
+            Text(String(localized: "bookshelf.delete_confirm_message"))
         }
     }
     
@@ -223,7 +241,7 @@ struct FilterSheetView: View {
             VStack(spacing: 0) {
                 // 日付フィルター
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("日付で絞り込む")
+                    Text(String(localized: "filter.by_date"))
                         .font(.custom("YuseiMagic-Regular", size: 18))
                         .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                         .padding(.horizontal, 20)
@@ -238,7 +256,7 @@ struct FilterSheetView: View {
                             HStack {
                                 Image(systemName: tempSelectedDate == nil ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(tempSelectedDate == nil ? Color(red: 20/255, green: 184/255, blue: 166/255) : Color.gray)
-                                Text("すべて")
+                                Text(String(localized: "filter.all"))
                                     .font(.custom("YuseiMagic-Regular", size: 16))
                                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                                 Spacer()
@@ -259,7 +277,7 @@ struct FilterSheetView: View {
                             HStack {
                                 Image(systemName: tempSelectedDate != nil ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(tempSelectedDate != nil ? Color(red: 20/255, green: 184/255, blue: 166/255) : Color.gray)
-                                Text(tempSelectedDate != nil ? formatDate(tempSelectedDate!) : "日付を選択")
+                                Text(tempSelectedDate != nil ? formatDate(tempSelectedDate!) : String(localized: "filter.select_date"))
                                     .font(.custom("YuseiMagic-Regular", size: 16))
                                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                                 Spacer()
@@ -285,7 +303,7 @@ struct FilterSheetView: View {
                 
                 // 子供フィルター
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("子供で絞り込む")
+                    Text(String(localized: "filter.by_child"))
                         .font(.custom("YuseiMagic-Regular", size: 18))
                         .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                         .padding(.horizontal, 20)
@@ -299,7 +317,7 @@ struct FilterSheetView: View {
                             HStack {
                                 Image(systemName: tempSelectedChildId == nil ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(tempSelectedChildId == nil ? Color(red: 20/255, green: 184/255, blue: 166/255) : Color.gray)
-                                Text("すべて")
+                                Text(String(localized: "filter.all"))
                                     .font(.custom("YuseiMagic-Regular", size: 16))
                                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                                 Spacer()
@@ -340,17 +358,17 @@ struct FilterSheetView: View {
                 
                 Spacer()
             }
-            .navigationTitle("フィルター")
+            .navigationTitle(String(localized: "filter.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
+                    Button(String(localized: "common.cancel")) {
                         dismiss()
                     }
                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("適用") {
+                    Button(String(localized: "filter.apply")) {
                         selectedDate = tempSelectedDate
                         selectedChildId = tempSelectedChildId
                         dismiss()
@@ -375,11 +393,17 @@ struct FilterSheetView: View {
         let calendar = Calendar.current
         if let dateObj = calendar.date(from: DateComponents(year: date.year, month: date.month, day: date.day)) {
             let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "ja_JP")
-            formatter.dateFormat = "yyyy年M月d日"
+            formatter.locale = Locale.current
+            formatter.setLocalizedDateFormatFromTemplate("yMMMd")
             return formatter.string(from: dateObj)
         }
-        return "\(date.year)年\(date.month)月\(date.day)日"
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.setLocalizedDateFormatFromTemplate("yMMMd")
+        if let dateObj = Calendar.current.date(from: DateComponents(year: date.year, month: date.month, day: date.day)) {
+            return formatter.string(from: dateObj)
+        }
+        return "\(date.month)/\(date.day)/\(date.year)"
     }
 }
 
@@ -403,7 +427,7 @@ struct DatePickerSheetView: View {
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.wheel)
-                    .environment(\.locale, Locale(identifier: "ja_JP"))
+                    .environment(\.locale, Locale.current)
                     
                     Spacer()
                 }
@@ -414,17 +438,17 @@ struct DatePickerSheetView: View {
                 Spacer()
             }
             .frame(maxWidth: .infinity)
-            .navigationTitle("日付を選択")
+            .navigationTitle(String(localized: "filter.select_date"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
+                    Button(String(localized: "common.cancel")) {
                         dismiss()
                     }
                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("決定") {
+                    Button(String(localized: "common.confirm")) {
                         let calendar = Calendar.current
                         let year = calendar.component(.year, from: pickerDate)
                         let month = calendar.component(.month, from: pickerDate)
@@ -568,13 +592,13 @@ struct StorybookListItemView: View {
         
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
-            return "今日"
+            return String(localized: "common.today")
         } else if calendar.isDateInYesterday(date) {
-            return "昨日"
+            return String(localized: "common.yesterday")
         } else {
             let displayFormatter = DateFormatter()
-            displayFormatter.locale = Locale(identifier: "ja_JP")
-            displayFormatter.dateFormat = "M月d日"
+            displayFormatter.locale = Locale.current
+            displayFormatter.setLocalizedDateFormatFromTemplate("MMMd")
             return displayFormatter.string(from: date)
         }
     }

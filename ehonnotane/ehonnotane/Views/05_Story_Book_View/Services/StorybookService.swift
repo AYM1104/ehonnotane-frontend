@@ -142,8 +142,8 @@ public class StorybookService: ObservableObject {
             
             print("✅ Storybook data received successfully")
             print("📖 Title: \(storybookResponse.title)")
-            print("📄 Pages with content: \(([storybookResponse.page1, storybookResponse.page2, storybookResponse.page3, storybookResponse.page4, storybookResponse.page5] as [String]).filter { !$0.isEmpty }.count)")
-            print("🖼️ Image URLs: cover=\(storybookResponse.coverImageUrl != nil ? "✅" : "❌"), page1=\(storybookResponse.page1ImageUrl != nil ? "✅" : "❌"), page2=\(storybookResponse.page2ImageUrl != nil ? "✅" : "❌"), page3=\(storybookResponse.page3ImageUrl != nil ? "✅" : "❌"), page4=\(storybookResponse.page4ImageUrl != nil ? "✅" : "❌"), page5=\(storybookResponse.page5ImageUrl != nil ? "✅" : "❌")")
+            print("📄 Pages with content: \(storybookResponse.pages?.count ?? 0)")
+            print("🖼️ Image URLs: cover=\(storybookResponse.coverImageUrl != nil ? "✅" : "❌"), pages with images=\(storybookResponse.pages?.filter { $0.imageUrl != nil }.count ?? 0)")
             print("📊 Image generation status: \(storybookResponse.imageGenerationStatus)")
             
             return storybookResponse
@@ -239,6 +239,10 @@ public class StorybookService: ObservableObject {
     
     func updateFavoriteStatus(storybookId: Int, isFavorite: Bool) async throws {
         try await listService.updateFavoriteStatus(storybookId: storybookId, isFavorite: isFavorite)
+    }
+    
+    func deleteStorybook(storybookId: Int) async throws {
+        try await listService.deleteStorybook(storybookId: storybookId)
     }
     
     // ThemePlotService への委譲

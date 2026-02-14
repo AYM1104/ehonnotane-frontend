@@ -11,95 +11,77 @@ struct EnhancedGenerationProgressView: View {
     let currentPage: Int
     let generatedPreviews: [Int: String]
     
-    @State private var characterOffset: CGFloat = 0
     @State private var showTip = true
     
     var body: some View {
         ZStack {
-            // 不透明背景（背後のカードが透けないようにする）
-            Color.black.opacity(0.95)
-                .ignoresSafeArea()
+            // 半透明の背景
+            Color.black.opacity(0.4)
+                .edgesIgnoringSafeArea(.all)
             
-            VStack(spacing: 24) {
+            VStack(spacing: 0) {
                 Spacer()
                 
-                // アニメーションするキャラクター
-                Image(systemName: "book.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.white)
-                    .offset(y: characterOffset)
-                    .shadow(color: .white.opacity(0.3), radius: 10)
-                
-                // 進捗表示（ドット + パーセンテージ）
+                // 濃いめの半透明パネル
                 VStack(spacing: 16) {
-                    // 進捗ドット
-                    ProgressDotsView(totalPages: totalPages, currentPage: currentPage)
+                    // アニメーションするキャラクター
+                    BookCharacterAnimation()
+                        .frame(width: 80, height: 96)
+                        .shadow(color: .white.opacity(0.3), radius: 10)
                     
-                    // パーセンテージと推定時間
-                    VStack(spacing: 8) {
-                        Text("\(Int(progress * 100))%")
-                            .font(.custom("ZenMaruGothic-Bold", size: 32))
-                            .foregroundColor(.white)
+                    // ティップス（キャラクターとプログレスバーの間）
+                    if !currentTip.isEmpty {
+                        MainText(text: currentTip, fontSize: 14)
+                            .padding(.horizontal, 24)
+                            .transition(.opacity)
+                    }
+                    
+                    // 進捗表示（ドット + パーセンテージ）
+                    VStack(spacing: 12) {
+                        // 進捗ドット
+                        ProgressDotsView(totalPages: totalPages, currentPage: currentPage)
                         
-                        if !estimatedTime.isEmpty {
-                            Text(estimatedTime)
-                                .font(.custom("ZenMaruGothic-Regular", size: 14))
-                                .foregroundColor(.white.opacity(0.8))
+                        // パーセンテージと推定時間
+                        VStack(spacing: 4) {
+                            MainText(text: "\(Int(progress * 100))%", fontSize: 28)
+                            
+                            if !estimatedTime.isEmpty {
+                                MainText(text: estimatedTime, fontSize: 12)
+                            }
                         }
                     }
-                }
-                
-                // ステータスメッセージ
-                Text(message)
-                    .font(.custom("ZenMaruGothic-Bold", size: 18))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-                    .frame(minHeight: 50)
-                
-                // ティップス（フェードイン・アウト）
-                if !currentTip.isEmpty {
-                    Text(currentTip)
-                        .font(.custom("ZenMaruGothic-Regular", size: 16))
-                        .foregroundColor(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                        .frame(minHeight: 60)
-                        .transition(.opacity)
-                } else {
-                    // ティップスが空の時もスペースを確保（レイアウトのジャンプを防ぐ）
-                    Spacer()
-                        .frame(height: 60)
-                }
-                
-                // 生成済みページプレビュー
-                if !generatedPreviews.isEmpty {
-                    VStack(spacing: 8) {
-                        Text("できてきたよ！")
-                            .font(.custom("ZenMaruGothic-Bold", size: 14))
-                            .foregroundColor(.white.opacity(0.8))
-                        
-                        PagePreviewsView(
-                            generatedPreviews: generatedPreviews,
-                            totalPages: totalPages
-                        )
+                    
+                    // ステータスメッセージ
+                    MainText(text: message, fontSize: 16)
+                        .padding(.horizontal, 24)
+                    
+
+                    
+                    // 生成済みページプレビュー
+                    if !generatedPreviews.isEmpty {
+                        VStack(spacing: 8) {
+                            MainText(text: String(localized: "generation.pages_ready"), fontSize: 14)
+                            
+                            PagePreviewsView(
+                                generatedPreviews: generatedPreviews,
+                                totalPages: totalPages
+                            )
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+                .padding(.vertical, 32)
+                .padding(.horizontal, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.black.opacity(0.6))
+                )
+                .padding(.horizontal, 40)
                 
                 Spacer()
             }
-            .padding(.vertical, 40)
         }
-        .onAppear {
-            // キャラクターアニメーション開始
-            withAnimation(
-                Animation.easeInOut(duration: 1.5)
-                    .repeatForever(autoreverses: true)
-            ) {
-                characterOffset = -15
-            }
-        }
+
     }
 }
 
@@ -108,7 +90,7 @@ struct EnhancedGenerationProgressView: View {
         progress: 0.05,
         message: "物語を書いています...",
         estimatedTime: "計算中...",
-        currentTip: "✨ すてきな えほんを つくっているよ",
+        currentTip: "どんな絵本ができるかな？",
         totalPages: 5,
         currentPage: 0,
         generatedPreviews: [:]
@@ -120,7 +102,7 @@ struct EnhancedGenerationProgressView: View {
         progress: 0.15,
         message: "絵を描いています...",
         estimatedTime: "残り約2分",
-        currentTip: "🎨 きれいな いろで ぬっているよ",
+        currentTip: "たのしみだね！",
         totalPages: 5,
         currentPage: 0,
         generatedPreviews: [:]
@@ -130,9 +112,9 @@ struct EnhancedGenerationProgressView: View {
 #Preview("画像生成中（65%）") {
     EnhancedGenerationProgressView(
         progress: 0.65,
-        message: "絵を描いています... (4/5ページ)",
+        message: "表紙を描いています...",
         estimatedTime: "残り約45秒",
-        currentTip: "📚 たのしい おはなしに なるかな？",
+        currentTip: "えほんができたら みんなにじまんしよう",
         totalPages: 5,
         currentPage: 4,
         generatedPreviews: [:]
@@ -144,7 +126,7 @@ struct EnhancedGenerationProgressView: View {
         progress: 0.99,
         message: "えほんを仕上げています...",
         estimatedTime: "残り約5秒",
-        currentTip: "🌟 もうすこしで できあがるよ",
+        currentTip: "もうすこしで できあがるよ",
         totalPages: 5,
         currentPage: 5,
         generatedPreviews: [:]

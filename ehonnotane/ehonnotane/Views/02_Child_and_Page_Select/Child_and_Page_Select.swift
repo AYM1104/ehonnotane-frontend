@@ -32,7 +32,7 @@ struct Child_and_Page_Selection_View: View {
             if initialDataLoaded {
                 mainContent
             } else {
-                LoadingOverlay(message: "読み込み中...")
+                LoadingOverlay(message: String(localized: "common.loading"))
             }
             
             // ヘッダー（ナビゲーション確認コールバック付き）
@@ -49,8 +49,7 @@ struct Child_and_Page_Selection_View: View {
                     requiredCredits: viewModel.requiredCredits,
                     currentCredits: viewModel.currentCredits
                 ) {
-                    // TODO: クレジット追加画面への遷移
-                    print("クレジットを追加 tapped")
+                    coordinator.navigateToPrice()
                 }
                 .zIndex(100) // 最前面に表示
             }
@@ -59,14 +58,14 @@ struct Child_and_Page_Selection_View: View {
             await loadInitialData()
         }
         // エラーアラート
-        .alert("エラー", isPresented: $showingErrorAlert) {
+        .alert(String(localized: "common.error"), isPresented: $showingErrorAlert) {
             Button("OK") { }
         } message: {
             Text(errorMessage)
         }
         // ナビゲーション確認アラート
-        .alert("確認", isPresented: $showNavigationAlert) {
-            Button("キャンセル", role: .cancel) {
+        .alert(String(localized: "common.confirmation"), isPresented: $showNavigationAlert) {
+            Button(String(localized: "common.cancel"), role: .cancel) {
                 pendingNavigationAction = nil
             }
             Button("OK", role: .destructive) {
@@ -75,14 +74,14 @@ struct Child_and_Page_Selection_View: View {
                 }
             }
         } message: {
-            Text("これまでの操作が保存されずに画面が移動します。よろしいですか？")
+            Text(String(localized: "theme.navigation_warning"))
         }
     }
     
     // 決定ボタン（共通部品）
     private var decideButton: some View {
         PrimaryButton(
-            title: "これにけってい",
+            title: String(localized: "common.confirm_button"),
             style: .primary,
             isLoading: viewModel.isLoading
         ) {
@@ -110,7 +109,7 @@ struct Child_and_Page_Selection_View: View {
                             }
                         } else {
                             print("❌ Upload result is missing")
-                            errorMessage = "アップロード情報が見つかりません"
+                            errorMessage = String(localized: "error.upload_not_found")
                             showingErrorAlert = true
                         }
                     } catch {
@@ -140,8 +139,8 @@ struct Child_and_Page_Selection_View: View {
                 .frame(height: 80)
 
             // メインテキスト
-            MainText(text: "どんな えほんを")
-            MainText(text: "つくろうかな？")
+            MainText(text: String(localized: "theme.title_line1"))
+            MainText(text: String(localized: "theme.title_line2"))
             Spacer()
         
                 if viewModel.childrenCount >= 2 {
@@ -162,10 +161,13 @@ struct Child_and_Page_Selection_View: View {
                             case .pageCount:
                                 // 1ページ目：ページ数選択
                                 SelectInputBoxCard(
-                                    title: "ページ数をえらんでね",
+                                    title: String(localized: "select.page_count_title"),
                                     options: viewModel.availablePageCountOptions,
                                     selection: $viewModel.selectedPageCount,
-                                    subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                                    subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)"),
+                                    onLockedOptionTap: {
+                                        coordinator.navigateToPrice()
+                                    }
                                 ) {
                                     EmptyView()
                                 } footer: {
@@ -177,7 +179,7 @@ struct Child_and_Page_Selection_View: View {
                             case .childSelect:
                                 // 2ページ目：子供選択
                                 SelectInputBoxCard(
-                                    title: "お子さまをえらんでね",
+                                    title: String(localized: "select.child_title"),
                                     options: viewModel.childOptions,
                                     selection: $viewModel.selectedChild,
                                     subTitle: nil
@@ -208,10 +210,13 @@ struct Child_and_Page_Selection_View: View {
                 } else {
                     // 子供が1人以下の場合は従来の単一カード表示
                     SelectInputBoxCard(
-                        title: "ページ数をえらんでね",
+                        title: String(localized: "select.page_count_title"),
                         options: viewModel.availablePageCountOptions,
                         selection: $viewModel.selectedPageCount,
-                        subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                        subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)"),
+                        onLockedOptionTap: {
+                            coordinator.navigateToPrice()
+                        }
                     ) {
                         EmptyView()
                     } footer: {
@@ -305,8 +310,8 @@ struct Child_and_Page_Selection_View_Preview: View {
                     .frame(height: 80)
 
                 // メインテキスト
-                MainText(text: "どんな えほんを")
-                MainText(text: "つくろうかな？")
+                MainText(text: String(localized: "theme.title_line1"))
+                MainText(text: String(localized: "theme.title_line2"))
                 Spacer()          
             
                 // メインカード
@@ -330,10 +335,10 @@ struct Child_and_Page_Selection_View_Preview: View {
                             case .pageCount:
                                 // 1ページ目：ページ数選択
                                 SelectInputBoxCard(
-                                    title: "ページ数をえらんでね",
+                                    title: String(localized: "select.page_count_title"),
                                     options: viewModel.availablePageCountOptions,
                                     selection: $viewModel.selectedPageCount,
-                                    subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                                    subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)")
                                 ) {
                                     EmptyView()
                                 } footer: {
@@ -345,7 +350,7 @@ struct Child_and_Page_Selection_View_Preview: View {
                             case .childSelect:
                                 // 2ページ目：子供選択
                                 SelectInputBoxCard(
-                                    title: "お子さまをえらんでね",
+                                    title: String(localized: "select.child_title"),
                                     options: viewModel.childOptions,
                                     selection: $viewModel.selectedChild,
                                     subTitle: nil
@@ -354,7 +359,7 @@ struct Child_and_Page_Selection_View_Preview: View {
                                 } footer: {
                                     // 決定ボタン
                                     PrimaryButton(
-                                        title: "これにけってい",
+                                        title: String(localized: "common.confirm_button"),
                                         style: .primary,
                                         isLoading: viewModel.isLoading
                                     ) {
@@ -382,15 +387,15 @@ struct Child_and_Page_Selection_View_Preview: View {
                 } else {
                     // 子供が1人以下の場合は従来の単一カード表示
                     SelectInputBoxCard(
-                        title: "ページ数をえらんでね",
+                        title: String(localized: "select.page_count_title"),
                         options: viewModel.availablePageCountOptions,
                         selection: $viewModel.selectedPageCount,
-                        subTitle: "消費クレジット: \(viewModel.requiredCredits)"
+                        subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)")
                     ) {
                         EmptyView()
                     } footer: {
                         PrimaryButton(
-                            title: "これにけってい",
+                            title: String(localized: "common.confirm_button"),
                             style: .primary,
                             isLoading: viewModel.isLoading
                         ) {

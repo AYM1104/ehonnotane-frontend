@@ -42,7 +42,7 @@ struct QuestionPageComponent: View {
                 } footer: {
                     // 最後のページの時だけ「これにけってい」ボタンを表示
                     if showSubmitButton && question.type == "select" {
-                        PrimaryButton(title: "これにけってい", action: {
+                        PrimaryButton(title: String(localized: "question.confirm_selection"), action: {
                             // 最後のページなので送信処理を実行
                             onSubmit?()
                         })
@@ -57,7 +57,7 @@ struct QuestionPageComponent: View {
             InputBoxCard(
                 title: question.question,
                 text: $answer,
-                placeholder: question.placeholder ?? "ここに入力",
+                placeholder: question.placeholder ?? String(localized: "common.input_here"),
                 subTitle: nil,
                 isTextFieldFocused: isTextFieldFocused
             ) {
@@ -66,7 +66,7 @@ struct QuestionPageComponent: View {
             } footer: {
                 // フッターに送信ボタンを配置
                 if showSubmitButton {
-                    PrimaryButton(title: "送信する", action: {
+                    PrimaryButton(title: String(localized: "question.submit"), action: {
                         onSubmit?()
                     })
                     .disabled(isSubmitting)
@@ -78,7 +78,7 @@ struct QuestionPageComponent: View {
             // 送信ボタンのみ（通常は最後のページで兼ねるのであまり使われないかも）
             VStack {
                 Spacer()
-                PrimaryButton(title: "送信する", action: {
+                PrimaryButton(title: String(localized: "question.submit"), action: {
                     onSubmit?()
                 })
                 .disabled(isSubmitting)

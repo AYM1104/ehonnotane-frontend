@@ -18,13 +18,12 @@ class ChildAndPageSelectViewModel: ObservableObject {
     // クリーンアップ用: story_setting_idを保持
     @Published var storySettingId: Int? = nil
     
-    // 選択可能なページ数を定義
-    private let allPageCountOptions: [SelectOption] = [
-        SelectOption(label: "3ページ", value: "3"),
-        SelectOption(label: "5ページ", value: "5"),
-        SelectOption(label: "7ページ", value: "7"),
-        SelectOption(label: "10ページ", value: "10")
-    ]
+    // 選択可能なページ数を定義（計算プロパティでローカライズ対応）
+    private var allPageCountOptions: [SelectOption] {
+        [3, 5, 7, 10].map { count in
+            SelectOption(label: String(localized: "select.page_count_option \(count)"), value: "\(count)")
+        }
+    }
     
     // 消費するクレジット数を定義
     var requiredCredits: Int {
@@ -192,21 +191,33 @@ class ChildAndPageSelectViewModel: ObservableObject {
     
     // サブスクプランに基づいて選択可能ページ数を表示
     private func updateAvailablePageOptions() {
-        // FreeとBasic(STARTER)は5ページまで
+        // FreeとBasic(STARTER)は5ページまで選択可能、7/10はロック表示
         if subscriptionPlan == .free || subscriptionPlan == .starter {
-            self.availablePageCountOptions = allPageCountOptions.filter { option in
-                guard let value = Int(option.value) else { return false }
-                return value <= 5
+            self.availablePageCountOptions = allPageCountOptions.map { option in
+                guard let value = Int(option.value) else { return option }
+                if value > 5 {
+                    return SelectOption(label: option.label, value: option.value, isLocked: true)
+                }
+                return option
             }
         } else {
             // それ以外は全て選択可能
             self.availablePageCountOptions = allPageCountOptions
         }
         
+        // 現在の選択がロックされた選択肢の場合はリセット
+        if let currentOption = availablePageCountOptions.first(where: { $0.value == selectedPageCount }),
+           currentOption.isLocked {
+            // 利用可能な最大のページ数（ロックされていない）を選択
+            if let lastUnlocked = availablePageCountOptions.last(where: { !$0.isLocked }) {
+                selectedPageCount = lastUnlocked.value
+            }
+        }
+        
         // 現在の選択が選択肢にない場合は、利用可能な最大のページ数を選択
         if !availablePageCountOptions.contains(where: { $0.value == selectedPageCount }) {
-            if let last = availablePageCountOptions.last {
-                selectedPageCount = last.value
+            if let lastUnlocked = availablePageCountOptions.last(where: { !$0.isLocked }) {
+                selectedPageCount = lastUnlocked.value
             }
         }
     }

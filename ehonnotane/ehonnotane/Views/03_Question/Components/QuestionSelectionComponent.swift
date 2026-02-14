@@ -19,7 +19,7 @@ struct QuestionSelectionComponent: View {
                 
                 // 最後のページの場合は送信ボタンを表示
                 if showSubmitButton {
-                    PrimaryButton(title: "送信する", action: {
+                    PrimaryButton(title: String(localized: "question.submit"), action: {
                         onSubmit?()
                     })
                     .disabled(isSubmitting || answer.isEmpty) // 選択必須とする場合

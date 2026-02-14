@@ -10,7 +10,7 @@ struct RegisterLoginButton: View {
 
         // ユーザー登録ボタン（セカンダリスタイル）
         PrimaryButton(
-            title: "ユーザー登録",
+            title: String(localized: "auth.register"),
             style: .secondary,
             width: 292,
             fontName: "YuseiMagic-Regular",
@@ -27,7 +27,7 @@ struct RegisterLoginButton: View {
         
         // ログインボタン（プライマリスタイル）
         PrimaryButton(
-            title: "ログイン",
+            title: String(localized: "auth.login"),
             width: 292,
             fontName: "YuseiMagic-Regular",
             fontSize: 20,

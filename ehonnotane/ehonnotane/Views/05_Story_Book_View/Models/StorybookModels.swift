@@ -95,34 +95,36 @@ struct Story {
             ))
         }
         
-        // 各ページを追加
-        let pageTexts: [(String?, String?)] = [
-            (response.page1, response.page1ImageUrl),
-            (response.page2, response.page2ImageUrl),
-            (response.page3, response.page3ImageUrl),
-            (response.page4, response.page4ImageUrl),
-            (response.page5, response.page5ImageUrl),
-            (response.page6, response.page6ImageUrl),
-            (response.page7, response.page7ImageUrl),
-            (response.page8, response.page8ImageUrl),
-            (response.page9, response.page9ImageUrl),
-            (response.page10, response.page10ImageUrl)
-        ]
-        
-        var pageIndex = pages.count
-        for (text, imageURL) in pageTexts {
-            if let text = text, !text.isEmpty {
-                pages.append(StoryPage(
-                    id: pageIndex,
-                    text: text,
-                    imageURL: imageURL,
-                    isCover: false
-                ))
-                pageIndex += 1
+        // pages 配列から各ページを追加
+        if let responsePages = response.pages {
+            var pageIndex = pages.count
+            for pageData in responsePages.sorted(by: { $0.pageNumber < $1.pageNumber }) {
+                if !pageData.content.isEmpty {
+                    pages.append(StoryPage(
+                        id: pageIndex,
+                        text: pageData.content,
+                        imageURL: pageData.imageUrl,
+                        isCover: false
+                    ))
+                    pageIndex += 1
+                }
             }
         }
         
         self.pages = pages
+    }
+}
+
+// MARK: - ページデータ（APIレスポンス用）
+struct PageData: Codable {
+    let pageNumber: Int
+    let content: String
+    let imageUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case pageNumber = "page_number"
+        case content
+        case imageUrl = "image_url"
     }
 }
 
@@ -135,28 +137,8 @@ struct StorybookResponse: Codable {
     let title: String
     let description: String?
     let keywords: [String]?
-    let storyContent: String
-    let page1: String
-    let page2: String
-    let page3: String
-    let page4: String
-    let page5: String
-    let page6: String?
-    let page7: String?
-    let page8: String?
-    let page9: String?
-    let page10: String?
     let coverImageUrl: String?
-    let page1ImageUrl: String?
-    let page2ImageUrl: String?
-    let page3ImageUrl: String?
-    let page4ImageUrl: String?
-    let page5ImageUrl: String?
-    let page6ImageUrl: String?
-    let page7ImageUrl: String?
-    let page8ImageUrl: String?
-    let page9ImageUrl: String?
-    let page10ImageUrl: String?
+    let pages: [PageData]?
     let imageGenerationStatus: String
     let isFavorite: Bool?
     let createdAt: String
@@ -170,28 +152,8 @@ struct StorybookResponse: Codable {
         case title
         case description
         case keywords
-        case storyContent = "story_content"
-        case page1 = "page_1"
-        case page2 = "page_2"
-        case page3 = "page_3"
-        case page4 = "page_4"
-        case page5 = "page_5"
-        case page6 = "page_6"
-        case page7 = "page_7"
-        case page8 = "page_8"
-        case page9 = "page_9"
-        case page10 = "page_10"
         case coverImageUrl = "cover_image_url"
-        case page1ImageUrl = "page_1_image_url"
-        case page2ImageUrl = "page_2_image_url"
-        case page3ImageUrl = "page_3_image_url"
-        case page4ImageUrl = "page_4_image_url"
-        case page5ImageUrl = "page_5_image_url"
-        case page6ImageUrl = "page_6_image_url"
-        case page7ImageUrl = "page_7_image_url"
-        case page8ImageUrl = "page_8_image_url"
-        case page9ImageUrl = "page_9_image_url"
-        case page10ImageUrl = "page_10_image_url"
+        case pages
         case imageGenerationStatus = "image_generation_status"
         case isFavorite = "is_favorite"
         case createdAt = "created_at"
@@ -335,28 +297,14 @@ extension StorybookResponse {
             title: "プレビューの森へようこそ",
             description: "ログイン不要でプレビュー確認するためのサンプル絵本です。",
             keywords: ["プレビュー", "サンプル"],
-            storyContent: "全ページの原稿を含むサンプル本文",
-            page1: "ある日、ちいさなタネが風に乗って森へたどり着きました。",
-            page2: "タネは優しい妖精と出会い、不思議な冒険へ進みます。",
-            page3: "森の動物たちが集まり、タネを応援してくれました。",
-            page4: "タネは光る泉で大切な願いを叶える方法を学びます。",
-            page5: "願いが叶い、タネは大きな木に成長して森を照らしました。",
-            page6: nil,
-            page7: nil,
-            page8: nil,
-            page9: nil,
-            page10: nil,
             coverImageUrl: "https://picsum.photos/seed/ehon-cover/900/1600",
-            page1ImageUrl: "https://picsum.photos/seed/ehon-page1/900/1600",
-            page2ImageUrl: "https://picsum.photos/seed/ehon-page2/900/1600",
-            page3ImageUrl: "https://picsum.photos/seed/ehon-page3/900/1600",
-            page4ImageUrl: "https://picsum.photos/seed/ehon-page4/900/1600",
-            page5ImageUrl: "https://picsum.photos/seed/ehon-page5/900/1600",
-            page6ImageUrl: nil,
-            page7ImageUrl: nil,
-            page8ImageUrl: nil,
-            page9ImageUrl: nil,
-            page10ImageUrl: nil,
+            pages: [
+                PageData(pageNumber: 1, content: "ある日、ちいさなタネが風に乗って森へたどり着きました。", imageUrl: "https://picsum.photos/seed/ehon-page1/900/1600"),
+                PageData(pageNumber: 2, content: "タネは優しい妖精と出会い、不思議な冒険へ進みます。", imageUrl: "https://picsum.photos/seed/ehon-page2/900/1600"),
+                PageData(pageNumber: 3, content: "森の動物たちが集まり、タネを応援してくれました。", imageUrl: "https://picsum.photos/seed/ehon-page3/900/1600"),
+                PageData(pageNumber: 4, content: "タネは光る泉で大切な願いを叶える方法を学びます。", imageUrl: "https://picsum.photos/seed/ehon-page4/900/1600"),
+                PageData(pageNumber: 5, content: "願いが叶い、タネは大きな木に成長して森を照らしました。", imageUrl: "https://picsum.photos/seed/ehon-page5/900/1600")
+            ],
             imageGenerationStatus: "completed",
             isFavorite: false,
             createdAt: "2024-01-01T00:00:00Z",

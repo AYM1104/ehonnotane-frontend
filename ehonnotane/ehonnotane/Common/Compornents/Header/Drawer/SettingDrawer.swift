@@ -8,12 +8,18 @@ struct SettingDrawer: View {
     @EnvironmentObject var coordinator: AppCoordinator
     @EnvironmentObject var authManager: AuthManager
     
+    // クレジット残高
+    @State private var creditBalance: Int = 0
+    
     // アカウント削除画面の表示フラグ
     @State private var showAccountDeletion = false
     
     // 利用規約・プライバシーポリシー表示フラグ
     @State private var showTermsOfService = false
     @State private var showPrivacyPolicy = false
+    
+    // 設定サブメニューの展開状態
+    @State private var showSettingsSubmenu = false
     
     // ナビゲーション割り込み用のコールバック（オプショナル）
     var onMyPageTap: (() -> Void)? = nil
@@ -82,7 +88,8 @@ struct SettingDrawer: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 DrawerItemRow(
                                     title: String(localized: "settings.credits"),
-                                    icon: Image("icon-coin")
+                                    icon: Image("icon-coin"),
+                                    value: "\(creditBalance)"
                                 ) {
                                     // TODO: 保有クレジット画面へ遷移
                                 }
@@ -117,18 +124,6 @@ struct SettingDrawer: View {
                                     }
                                 }
                                 DrawerItemRow(
-                                    title: String(localized: "settings.terms"),
-                                    icon: Image("icon-info")
-                                ) {
-                                    showTermsOfService = true
-                                }
-                                DrawerItemRow(
-                                    title: String(localized: "settings.privacy"),
-                                    icon: Image("icon-lock")
-                                ) {
-                                    showPrivacyPolicy = true
-                                }
-                                DrawerItemRow(
                                     title: String(localized: "settings.logout"),
                                     icon: Image("icon-logout")
                                 ) {
@@ -146,15 +141,58 @@ struct SettingDrawer: View {
                                         coordinator.navigateToTop()
                                     }
                                 }
-                                DrawerItemRow(
-                                    title: String(localized: "settings.delete_account"),
-                                    icon: Image("icon-delete-trash")
-                                ) {
-                                    print("🗑️ アカウント削除ボタンがタップされました")
-                                    print("🗑️ showAccountDeletion を true に設定します")
-                                    showAccountDeletion = true
-                                    print("🗑️ showAccountDeletion = \(showAccountDeletion)")
-                                }
+                                
+                                // 設定メニュー（展開式）
+                                DisclosureGroup(
+                                    isExpanded: $showSettingsSubmenu,
+                                    content: {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            DrawerItemRow(
+                                                title: String(localized: "settings.terms"),
+                                                icon: Image("icon-info")
+                                            ) {
+                                                showTermsOfService = true
+                                            }
+                                            DrawerItemRow(
+                                                title: String(localized: "settings.privacy"),
+                                                icon: Image("icon-lock")
+                                            ) {
+                                                showPrivacyPolicy = true
+                                            }
+                                            DrawerItemRow(
+                                                title: String(localized: "settings.delete_account"),
+                                                icon: Image("icon-delete-trash")
+                                            ) {
+                                                print("🗑️ アカウント削除ボタンがタップされました")
+                                                print("🗑️ showAccountDeletion を true に設定します")
+                                                showAccountDeletion = true
+                                                print("🗑️ showAccountDeletion = \(showAccountDeletion)")
+                                            }
+                                        }
+                                        .padding(.leading, 12)
+                                        .padding(.top, 8)
+                                    },
+                                    label: {
+                                        HStack(spacing: 14) {
+                                            Image(systemName: "gearshape")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .foregroundColor(Color(hex: "362D30"))
+                                                .frame(width: 24, height: 24)
+                                            
+                                            Text(String(localized: "settings.settings"))
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(Color(hex: "362D30"))
+                                        }
+                                    }
+                                )
+                                .accentColor(Color(hex: "362D30"))
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.08))
+                                )
                             }
                             
                             Spacer()
@@ -174,6 +212,20 @@ struct SettingDrawer: View {
                 .onAppear {  // ドロワーが表示された時のアニメーション
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {  // 控えめなアニメーション  
                         slideIn = true  // ドロワーを表示
+                    }
+                    
+                    // クレジット残高を取得
+                    Task {
+                        if let userId = authManager.getCurrentUserId() {
+                            do {
+                                let user = try await UserService.shared.fetchUser(userId: userId)
+                                await MainActor.run {
+                                    creditBalance = user.balance
+                                }
+                            } catch {
+                                print("❌ SettingDrawer: ユーザー情報取得失敗: \(error)")
+                            }
+                        }
                     }
                 }
             }

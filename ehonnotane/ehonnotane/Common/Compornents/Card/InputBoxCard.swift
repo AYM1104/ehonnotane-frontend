@@ -13,7 +13,7 @@ struct InputBoxCard<TopContent: View, Footer: View>: View {
     init(
         title: String,
         text: Binding<String>,
-        placeholder: String = "ここに入力",
+        placeholder: String = String(localized: "common.input_here"),
         subTitle: String? = nil,
         isTextFieldFocused: FocusState<Bool>.Binding? = nil,
         @ViewBuilder topContent: () -> TopContent,

@@ -16,6 +16,9 @@ class StoreKitManager: ObservableObject {
     /// 利用可能なサブスクリプションプロダクト
     @Published var availableProducts: [Product] = []
     
+    /// 利用可能なクレジットパックプロダクト
+    @Published var availableCreditPacks: [Product] = []
+    
     /// 利用可能なサブスクリプションプロダクト（互換性のため）
     var products: [Product] { availableProducts }
     
@@ -40,6 +43,13 @@ class StoreKitManager: ObservableObject {
         "com.ehonnotane.subscription.premium"
     ]
     
+    /// クレジットパックプロダクトID
+    private let creditPackIds = [
+        "com.ehonnotane.credits.pack100",
+        "com.ehonnotane.credits.pack500",
+        "com.ehonnotane.credits.pack1000"
+    ]
+    
     /// トランザクション更新タスク
     private var transactionUpdateTask: Task<Void, Never>?
     
@@ -54,6 +64,7 @@ class StoreKitManager: ObservableObject {
         // プロダクト情報を読み込み
         Task {
             await loadProducts()
+            await loadCreditPacks()
             await checkPurchasedSubscriptions()
         }
     }
@@ -79,6 +90,20 @@ class StoreKitManager: ObservableObject {
         } catch {
             print("❌ StoreKit: プロダクト読み込みエラー - \(error)")
             lastError = .loadProductsFailed(error)
+        }
+    }
+    
+    /// クレジットパック情報を読み込む
+    func loadCreditPacks() async {
+        do {
+            let products = try await Product.products(for: creditPackIds)
+            self.availableCreditPacks = products.sorted { lhs, rhs in
+                // 価格順にソート
+                (lhs.price as Decimal) < (rhs.price as Decimal)
+            }
+            print("✅ StoreKit: \(products.count)個のクレジットパックを読み込みました")
+        } catch {
+            print("❌ StoreKit: クレジットパック読み込みエラー - \(error)")
         }
     }
     
@@ -123,6 +148,52 @@ class StoreKitManager: ObservableObject {
             
         case .pending:
             print("⏳ StoreKit: 購入が保留中です（Ask to Buyなど）")
+            throw StoreKitError.purchasePending
+            
+        @unknown default:
+            print("❌ StoreKit: 不明な購入結果")
+            throw StoreKitError.unknownPurchaseResult
+        }
+    }
+    
+    /// クレジットパックを購入（消耗品）
+    func purchaseCreditPack(_ product: Product) async throws -> (transaction: Transaction, creditsAmount: Int) {
+        isLoading = true
+        defer { isLoading = false }
+        
+        print("🛒 StoreKit: クレジットパック購入開始 - \(product.id)")
+        
+        let result = try await product.purchase()
+        
+        switch result {
+        case .success(let verification):
+            let transaction = try checkVerified(verification)
+            
+            print("✅ StoreKit: クレジットパック購入成功 - \(transaction.productID)")
+            
+            // プロダクトIDからクレジット量を算出
+            let creditsAmount = creditsForProduct(product.id)
+            
+            // バックエンドでクレジットを付与
+            do {
+                try await purchaseCreditsOnBackend(amount: creditsAmount)
+                print("✅ バックエンドクレジット付与成功 - \(creditsAmount)クレジット")
+            } catch {
+                print("⚠️ バックエンドクレジット付与エラー: \(error)")
+                // エラーでも続行（後でリトライ可能）
+            }
+            
+            // トランザクションを完了
+            await transaction.finish()
+            
+            return (transaction, creditsAmount)
+            
+        case .userCancelled:
+            print("⚠️ StoreKit: ユーザーが購入をキャンセルしました")
+            throw StoreKitError.purchaseCancelled
+            
+        case .pending:
+            print("⏳ StoreKit: 購入が保留中です")
             throw StoreKitError.purchasePending
             
         @unknown default:
@@ -219,6 +290,40 @@ class StoreKitManager: ObservableObject {
             // 検証成功
             return transaction
         }
+    }
+    
+    /// プロダクトIDからクレジット量を算出
+    func creditsForProduct(_ productId: String) -> Int {
+        switch productId {
+        case "com.ehonnotane.credits.pack100":
+            return 100
+        case "com.ehonnotane.credits.pack500":
+            return 500
+        case "com.ehonnotane.credits.pack1000":
+            return 1000
+        default:
+            return 0
+        }
+    }
+    
+    /// バックエンドでクレジットを付与
+    private func purchaseCreditsOnBackend(amount: Int) async throws {
+        // APIClient経由でバックエンドのクレジット購入エンドポイントを呼び出し
+        struct PurchaseRequest: Codable {
+            let amount: Int
+        }
+        
+        struct PurchaseResponse: Codable {
+            let success: Bool
+            let balance: Int
+            let purchased_amount: Int
+        }
+        
+        let _: PurchaseResponse = try await APIClient.shared.request(
+            endpoint: "/api/credits/purchase",
+            method: .post,
+            body: PurchaseRequest(amount: amount)
+        )
     }
 }
 

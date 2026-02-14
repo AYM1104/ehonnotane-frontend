@@ -16,7 +16,7 @@ struct BookShelfView: View {
                     .frame(height: 80)
 
                 // タイトルテキスト
-                MainText(text: "これまでに そだてた たね")
+                MainText(text: String(localized: "bookshelf.title"))
                     .padding(.bottom, 16)
                 Spacer()
                         
@@ -49,7 +49,7 @@ struct BookShelfView: View {
                     .frame(height: 80)
 
                 // タイトルテキスト
-                MainText(text: "これまでに そだてた たね")
+                MainText(text: String(localized: "bookshelf.title"))
                     .padding(.bottom, 16)
                 Spacer()
                         
@@ -209,6 +209,9 @@ struct CalendarViewWithTestData: View {
                         Child(id: 2, user_id: "test-user-1", name: "ハル", birthdate: nil, color_theme: nil, created_at: "")
                     ],
                     onFavoriteTap: { _ in
+                        // プレビュー用：何もしない
+                    },
+                    onDeleteTap: { _ in
                         // プレビュー用：何もしない
                     }
                 )

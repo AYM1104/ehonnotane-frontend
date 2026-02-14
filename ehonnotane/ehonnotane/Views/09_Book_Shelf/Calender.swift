@@ -71,6 +71,11 @@ struct CalendarView: View {
                         Task {
                             await viewModel.toggleFavorite(storybookId: storybookId)
                         }
+                    },
+                    onDeleteTap: { storybookId in
+                        Task {
+                            await viewModel.deleteStorybook(storybookId: storybookId)
+                        }
                     }
                 )
                 .padding(.top, 16)

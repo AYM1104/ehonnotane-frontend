@@ -2,7 +2,7 @@ import SwiftUI
 
 struct StoryBookView: View {
     let storybookId: Int
-    @State private var storyTitle = "絵本を読み込み中..."
+    @State private var storyTitle = String(localized: "book.loading_title")
     @StateObject private var viewModel: BookFromAPIModel
     @State private var currentPageIndex: Int = 0
     
@@ -57,7 +57,7 @@ struct StoryBookView: View {
                                 VStack(spacing: 20) {
                                     ProgressView()
                                         .scaleEffect(1.5)
-                                    Text("絵本を読み込んでいます...")
+                                    Text(String(localized: "book.loading_message"))
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                 }
@@ -67,7 +67,7 @@ struct StoryBookView: View {
                                     Image(systemName: "exclamationmark.triangle")
                                         .font(.system(size: 50))
                                         .foregroundColor(.orange)
-                                    Text("エラーが発生しました")
+                                    Text(String(localized: "common.error_occurred"))
                                         .font(.title2)
                                         .fontWeight(.semibold)
                                         .foregroundColor(.primary)
@@ -77,7 +77,7 @@ struct StoryBookView: View {
                                         .multilineTextAlignment(.center)
                                         .padding(.horizontal)
                                     
-                                    Button("再試行") {
+                                    Button(String(localized: "common.retry")) {
                                         Task {
                                             await viewModel.loadStorybook()
                                         }
@@ -91,7 +91,7 @@ struct StoryBookView: View {
                                         // 画像生成中の進捗表示
                                         VStack(spacing: 20) {
                                             // ページ進捗表示
-                                            Text("\(viewModel.currentGeneratingPage)/\(viewModel.totalPages)ページ生成中...")
+                                            Text(String(localized: "book.generating_pages \(viewModel.currentGeneratingPage) \(viewModel.totalPages)"))
                                                 .font(.subheadline)
                                                 .foregroundColor(.secondary)
                                             
@@ -135,7 +135,7 @@ struct StoryBookView: View {
                                     Image(systemName: "book.closed")
                                         .font(.system(size: 50))
                                         .foregroundColor(.primary)
-                                    Text("絵本を読み込み中...")
+                                    Text(String(localized: "book.loading_title"))
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                 }
@@ -157,11 +157,11 @@ struct StoryBookView: View {
                                 .font(.system(size: 50))
                                 .foregroundColor(.orange)
                             
-                            Text("iOS 15.0以上が必要です")
+                            Text(String(localized: "book.ios_required_title"))
                                 .font(.title2)
                                 .fontWeight(.semibold)
                             
-                            Text("この機能を使用するにはiOS 15.0以上が必要です")
+                            Text(String(localized: "book.ios_required_message"))
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                         }
@@ -179,6 +179,7 @@ struct StoryBookView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     StoryBookView(
         storybookId: 1,
@@ -187,3 +188,4 @@ struct StoryBookView: View {
     .environmentObject(AuthManager())
     .environmentObject(StorybookService.shared)
 }
+#endif

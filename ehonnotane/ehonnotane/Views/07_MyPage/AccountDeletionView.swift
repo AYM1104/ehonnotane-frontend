@@ -37,7 +37,7 @@ struct AccountDeletionView: View {
                             .foregroundColor(.white)
                     }
                     Spacer()
-                    Text("アカウント削除")
+                    Text(String(localized: "settings.delete_account"))
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                     Spacer()
@@ -57,22 +57,22 @@ struct AccountDeletionView: View {
                 
                 // Warning Text
                 VStack(spacing: 16) {
-                    Text("本当に削除しますか？")
+                    Text(String(localized: "account.confirm_delete"))
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    Text("アカウントを削除すると、以下のデータを含むすべての情報が完全に削除され、復元することはできません。")
+                    Text(String(localized: "account.delete_warning"))
                         .font(.body)
                         .foregroundColor(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        BulletPoint(text: "作成したすべての絵本")
-                        BulletPoint(text: "アップロードした写真")
-                        BulletPoint(text: "購入したクレジット")
-                        BulletPoint(text: "お子さまの情報")
+                        BulletPoint(text: String(localized: "account.delete_item1"))
+                        BulletPoint(text: String(localized: "account.delete_item2"))
+                        BulletPoint(text: String(localized: "account.delete_item3"))
+                        BulletPoint(text: String(localized: "account.delete_item4"))
                     }
                     .padding(.vertical)
                 }
@@ -92,7 +92,7 @@ struct AccountDeletionView: View {
                     Button(action: {
                         alertType = .confirmation
                     }) {
-                        Text("アカウントを削除する")
+                        Text(String(localized: "account.delete_button"))
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -106,7 +106,7 @@ struct AccountDeletionView: View {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
                     }) {
-                        Text("キャンセル")
+                        Text(String(localized: "common.cancel"))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -131,17 +131,17 @@ struct AccountDeletionView: View {
             switch type {
             case .confirmation:
                 return Alert(
-                    title: Text("最終確認"),
-                    message: Text("この操作は取り消せません。本当に削除しますか？"),
-                    primaryButton: .destructive(Text("削除する")) {
+                    title: Text(String(localized: "account.final_confirmation")),
+                    message: Text(String(localized: "account.cannot_undo")),
+                    primaryButton: .destructive(Text(String(localized: "common.delete"))) {
                         performDeletion()
                     },
-                    secondaryButton: .cancel(Text("キャンセル"))
+                    secondaryButton: .cancel(Text(String(localized: "common.cancel")))
                 )
             case .success:
                 return Alert(
-                    title: Text("削除完了"),
-                    message: Text("アカウントを削除しました。"),
+                    title: Text(String(localized: "account.deletion_complete")),
+                    message: Text(String(localized: "account.deleted_message")),
                     dismissButton: .default(Text("OK")) {
                         handleDeletionComplete()
                     }
@@ -152,7 +152,7 @@ struct AccountDeletionView: View {
     
     private func performDeletion() {
         guard let userId = authManager.userInfo?.id else {
-            errorMessage = "ユーザー情報が見つかりません"
+            errorMessage = String(localized: "account.user_not_found")
             return
         }
         
@@ -172,7 +172,7 @@ struct AccountDeletionView: View {
             } catch {
                 await MainActor.run {
                     isDeleting = false
-                    errorMessage = "削除に失敗しました: \(error.localizedDescription)"
+                    errorMessage = String(localized: "account.delete_failed \(error.localizedDescription)")
                     print("❌ アカウント削除に失敗しました: \(error)")
                 }
             }

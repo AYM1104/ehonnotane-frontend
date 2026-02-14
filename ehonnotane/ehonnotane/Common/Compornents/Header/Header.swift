@@ -28,7 +28,7 @@ struct Header: View {
                             .frame(width: 40, height: 40)
                             .padding(.leading, 16)
                         
-                        Text("えほんのたね")
+                        Text(String(localized: "app.title"))
                             .font(.custom("YuseiMagic-Regular", size: 20))
                             .fontWeight(.bold)
                             .foregroundColor(.white)

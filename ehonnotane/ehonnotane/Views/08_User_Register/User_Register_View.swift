@@ -50,7 +50,7 @@ struct User_Register_View: View {
                     VStack(spacing: 20) {
 
                         // タイトル
-                        MainText(text: "ユーザー登録")
+                        MainText(text: String(localized: "auth.register"))
 
                         PageSlider(
                             pages,
@@ -165,7 +165,7 @@ struct User_Register_View: View {
                     let trimmedNickname = userNickname.trimmingCharacters(in: .whitespacesAndNewlines)
                     if trimmedNickname.isEmpty {
                         // OAuth認証の表示名を使用（UserInfoのdisplayNameはname ?? email ?? "ユーザー"を返す）
-                        nicknameToSave = authManager.userInfo?.displayName ?? "ユーザー"
+                        nicknameToSave = authManager.userInfo?.displayName ?? String(localized: "common.user")
                         print("ℹ️ ニックネーム未入力のため、OAuth表示名を使用: \(nicknameToSave)")
                     } else {
                         nicknameToSave = trimmedNickname
@@ -227,9 +227,9 @@ private enum RegistrationStatus {
     var message: String {
         switch self {
         case .processing:
-            return "ユーザー情報登録中"
+            return String(localized: "register.processing")
         case .completed:
-            return "ユーザー情報の登録が完了しました"
+            return String(localized: "register.completed")
         }
     }
     

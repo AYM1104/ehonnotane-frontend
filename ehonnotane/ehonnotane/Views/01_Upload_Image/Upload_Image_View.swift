@@ -31,8 +31,8 @@ struct Upload_Image_View: View {
                     .frame(height: 80)
                 
                 // メインテキスト
-                MainText(text: "どんな えほんを")
-                MainText(text: "つくろうかな？")
+                MainText(text: String(localized: "theme.title_line1"))
+                MainText(text: String(localized: "theme.title_line2"))
                 Spacer()
                 
                 // メインカード
@@ -55,7 +55,7 @@ struct Upload_Image_View: View {
                             
                             // 決定ボタン
                             PrimaryButton(
-                                title: "これに けってい",
+                                title: String(localized: "upload.confirm_button"),
                                 fontSize: 18,
                                 action: {
                                     // プレビューでは実行されない
@@ -75,7 +75,7 @@ struct Upload_Image_View: View {
                             // 画像が選択されていない場合、選択ボタンのみ表示
                             Spacer()
                             PrimaryButton(
-                                title: "画像を選択する",
+                                title: String(localized: "upload.select_image"),
                                 fontSize: 20,
                                 action: {
                                     // sheetを直接表示（SwiftUIが自動的にアニメーションを処理）
@@ -95,7 +95,7 @@ struct Upload_Image_View: View {
             
             // 決定ボタンを押したらローディングオーバーレイを表示
             if viewModel.isUploading {
-                LoadingOverlay(message: "物語のタネを\nまいています...")
+                LoadingOverlay(message: String(localized: "upload.loading_message"))
             }
         }
         .sheet(isPresented: $showingImagePicker) {
@@ -127,7 +127,7 @@ struct Upload_Image_View: View {
                 print("⚠️ Upload_Image_View: ログアウトを検知")
             }
         }
-        .alert("アップロードエラー", isPresented: Binding(
+        .alert(String(localized: "upload.error_title"), isPresented: Binding(
             get: { viewModel.showingError },
             set: { if !$0 { viewModel.clearError() } }
         )) {

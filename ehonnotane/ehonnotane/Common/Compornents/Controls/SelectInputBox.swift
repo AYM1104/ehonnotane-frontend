@@ -4,6 +4,7 @@ import SwiftUI
 struct SelectOption: Identifiable {
     let label: String
     let value: String
+    var isLocked: Bool = false
     
     var id: String { value }
 }
@@ -13,25 +14,40 @@ struct Select_Input_Box: View {
     let options: [SelectOption]
     @Binding var answer: String
     var onTap: (() -> Void)? = nil
+    var onLockedOptionTap: (() -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Menu {
                 ForEach(options, id: \.value) { option in
-                    Button {
-                        // キーボードを閉じるためにフォーカスを解除
-                        onTap?()
-                        // 保存するのはAPIが期待するvalue（英語コード）
-                        answer = option.value
-                    } label: {
-                        HStack {
-                            Text(option.label)
-                                .font(.custom("YuseiMagic-Regular", size: 16))
-                                .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
-                            
-                            if answer == option.value {
-                                Image(systemName: "checkmark.circle.fill")
+                    if option.isLocked {
+                        // ロックされた選択肢：タップで課金誘導
+                        Button {
+                            onLockedOptionTap?()
+                        } label: {
+                            HStack {
+                                Text(option.label)
+                                Image(systemName: "lock.fill")
+                                Text(String(localized: "select.upgrade_required"))
+                                    .font(.caption)
+                            }
+                        }
+                    } else {
+                        Button {
+                            // キーボードを閉じるためにフォーカスを解除
+                            onTap?()
+                            // 保存するのはAPIが期待するvalue（英語コード）
+                            answer = option.value
+                        } label: {
+                            HStack {
+                                Text(option.label)
+                                    .font(.custom("YuseiMagic-Regular", size: 16))
                                     .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
+                                
+                                if answer == option.value {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(Color(red: 54/255, green: 45/255, blue: 48/255))
+                                }
                             }
                         }
                     }
@@ -70,8 +86,8 @@ struct Select_Input_Box: View {
     
     /// 現在の選択値(value)に対応するlabelを返す
     private func displayLabel(for value: String, in options: [SelectOption]) -> String {
-        guard !value.isEmpty else { return "選択してください" }
-        return options.first(where: { $0.value == value })?.label ?? "選択してください"
+        guard !value.isEmpty else { return String(localized: "common.please_select") }
+        return options.first(where: { $0.value == value })?.label ?? String(localized: "common.please_select")
     }
 }
 
@@ -85,7 +101,7 @@ private struct SelectInputBoxPreview: View {
     private let mockOptions = [
         SelectOption(label: "くま", value: "bear"),
         SelectOption(label: "きつね", value: "fox"),
-        SelectOption(label: "うさぎ", value: "rabbit")
+        SelectOption(label: "うさぎ", value: "rabbit", isLocked: true)
     ]
     
     var body: some View {
@@ -97,4 +113,5 @@ private struct SelectInputBoxPreview: View {
         .background(Color(red: 254/255, green: 247/255, blue: 232/255))
     }
 }
+
 

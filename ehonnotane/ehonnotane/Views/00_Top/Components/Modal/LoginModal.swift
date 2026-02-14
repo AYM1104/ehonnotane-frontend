@@ -12,9 +12,9 @@ enum LoginModalMode {
     func buttonTitle(providerName: String) -> String {
         switch self {
         case .login:
-            return "\(providerName)でログイン"
+            return String(localized: "auth.login_with \(providerName)")
         case .signup:
-            return "\(providerName)でサインアップ"
+            return String(localized: "auth.signup_with \(providerName)")
         }
     }
 }

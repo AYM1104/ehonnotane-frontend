@@ -29,7 +29,7 @@ struct ChildAddSheetView: View {
         let comps = calendar.dateComponents([.year, .month], from: date, to: now)
         let years = comps.year ?? 0
         let months = comps.month ?? 0
-        return "\(years)歳\(months)ヶ月"
+        return String(localized: "child.age \(years) \(months)")
     }
 
     var body: some View {
@@ -41,7 +41,7 @@ struct ChildAddSheetView: View {
                     .frame(width: 40, height: 5)
                     .padding(.top, 10)
                 
-                Text("お子さまを追加")
+                Text(String(localized: "child.add_child"))
                     .font(.custom("YuseiMagic-Regular", size: 22))
                     .foregroundColor(Color(hex: "362D30"))
                     .padding(.top, 10)
@@ -49,14 +49,14 @@ struct ChildAddSheetView: View {
                 VStack(spacing: 24) {
                     // 名前入力
                     InputBox2(
-                        placeholder: "おなまえ",
+                        placeholder: String(localized: "child.name_placeholder"),
                         text: $childName,
                         underlineOnly: true
                     )
                     
                     // 誕生日入力
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(childBirthday.isEmpty ? "たんじょうび" : childBirthday)
+                        Text(childBirthday.isEmpty ? String(localized: "child.birthday_placeholder") : childBirthday)
                             .font(.custom("YuseiMagic-Regular", size: 18))
                             .foregroundColor(childBirthday.isEmpty ? Color.black.opacity(0.4) : Color.black)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -83,7 +83,7 @@ struct ChildAddSheetView: View {
                 
                 // 追加ボタン
                 PrimaryButton(
-                    title: "追加する",
+                    title: String(localized: "common.add"),
                     action: {
                         if canAddChild {
                             onAdd(childName, childBirthDate)
@@ -113,7 +113,7 @@ struct ChildAddSheetView: View {
                     
                     VStack(spacing: 0) {
                         HStack {
-                            Button("キャンセル") {
+                            Button(String(localized: "common.cancel")) {
                                 withAnimation {
                                     isDatePickerVisible = false
                                 }
@@ -123,7 +123,7 @@ struct ChildAddSheetView: View {
                             
                             Spacer()
                             
-                            Button("決定") {
+                            Button(String(localized: "common.confirm")) {
                                 childBirthDate = tempBirthDate
                                 childBirthday = formatDate(tempBirthDate)
                                 withAnimation {

@@ -11,5 +11,7 @@
 		<string>webcredentials:ehonnotane.jp.auth0.com</string>
 		<string>applinks:ehonnotane.jp.auth0.com</string>
 	</array>
+	<key>aps-environment</key>
+	<string>production</string>
 </dict>
 </plist>

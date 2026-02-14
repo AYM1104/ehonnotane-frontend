@@ -8,6 +8,7 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
     let topContent: TopContent
     let footer: Footer
     let isTextFieldFocused: FocusState<Bool>.Binding?
+    let onLockedOptionTap: (() -> Void)?
     
     init(
         title: String,
@@ -15,6 +16,7 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
         selection: Binding<String>,
         subTitle: String? = nil,
         isTextFieldFocused: FocusState<Bool>.Binding? = nil,
+        onLockedOptionTap: (() -> Void)? = nil,
         @ViewBuilder topContent: () -> TopContent,
         @ViewBuilder footer: () -> Footer
     ) {
@@ -23,6 +25,7 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
         self._selection = selection
         self.subTitle = subTitle
         self.isTextFieldFocused = isTextFieldFocused
+        self.onLockedOptionTap = onLockedOptionTap
         self.topContent = topContent()
         self.footer = footer()
     }
@@ -47,7 +50,8 @@ struct SelectInputBoxCard<TopContent: View, Footer: View>: View {
                             onTap: {
                                 // キーボードを閉じるためにフォーカスを解除
                                 isTextFieldFocused?.wrappedValue = false
-                            }
+                            },
+                            onLockedOptionTap: onLockedOptionTap
                         )
                         .frame(maxWidth: 360) // ここでセレクトボックスの最大幅を調整
                         // Select_Input_Boxコンポーネントの上にタイトルを配置

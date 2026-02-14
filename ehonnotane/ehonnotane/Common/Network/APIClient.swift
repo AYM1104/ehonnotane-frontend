@@ -88,9 +88,9 @@ class APIClient {
             }
             
             // 共通ヘッダー（認証トークンなど）の設定
-            // if let token = AuthManager.shared.accessToken {
-            //     request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            // }
+            if let token = AuthManager.shared.getAccessToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
             
             let (data, response) = try await URLSession.shared.data(for: request)
             

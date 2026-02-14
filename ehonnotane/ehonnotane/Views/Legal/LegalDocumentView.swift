@@ -82,8 +82,8 @@ struct LocalHTMLWebView: UIViewRepresentable {
                 </style>
             </head>
             <body>
-                <p>ドキュメントを読み込めませんでした。</p>
-                <p>後ほど再度お試しください。</p>
+                <p>Document could not be loaded.</p>
+                <p>Please try again later.</p>
             </body>
             </html>
             """

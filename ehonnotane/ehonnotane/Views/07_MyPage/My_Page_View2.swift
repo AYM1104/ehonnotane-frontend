@@ -17,6 +17,8 @@ struct My_Page_View2: View {
     @State private var newChildBirthday: String = ""
     @State private var newChildBirthDate: Date = Date()
     
+    // ニックネーム編集シート表示状態
+    @State private var showNicknameEditSheet: Bool = false
 
     
     var body: some View {
@@ -38,8 +40,8 @@ struct My_Page_View2: View {
                     UserNicknameDisplay(
                         nickname: viewModel.username,
                         onEditTap: {
-                            // 編集アクション
-                            print("編集ボタンがタップされました")
+                            // ニックネーム編集シートを表示
+                            showNicknameEditSheet = true
                         }
                     )
                 }
@@ -73,7 +75,7 @@ struct My_Page_View2: View {
                     .frame(height: 25) // コインセクションとの間隔
                 
                 PrimaryButton(
-                    title: "クレジットを追加する",
+                    title: String(localized: "mypage.add_credits"),
                     width: nil, // 幅を自動調整
                     fontName: nil, // SFPro（システムフォント）を使用
                     action: {
@@ -90,7 +92,7 @@ struct My_Page_View2: View {
                 
                 VStack() {
                     // タイトル
-                    Text("これまでに 育てた たね")
+                    Text(String(localized: "mypage.seeds_grown"))
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -100,19 +102,19 @@ struct My_Page_View2: View {
                     HStack(spacing: 12) {
                         // 左：すべて
                         StatItem(
-                            label: "すべて",
+                            label: String(localized: "mypage.stat_total"),
                             value: "\(viewModel.statistics?.total ?? 0)"
                         )
                         
                         // 中央：今月
                         StatItem(
-                            label: "今月",
+                            label: String(localized: "mypage.stat_this_month"),
                             value: "\(viewModel.statistics?.thisMonth ?? 0)"
                         )
                         
                         // 右：今週
                         StatItem(
-                            label: "今週",
+                            label: String(localized: "mypage.stat_this_week"),
                             value: "\(viewModel.statistics?.thisWeek ?? 0)"
                         )
                     }
@@ -124,7 +126,7 @@ struct My_Page_View2: View {
                     .frame(height: 20) // 統計セクションとの間隔
                 
                 // タイトル
-                Text("お気に入りのえほん")
+                Text(String(localized: "mypage.favorite_books"))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -200,7 +202,7 @@ struct My_Page_View2: View {
                         Group {
                             if filteredFavorites.isEmpty {
                                 // お気に入りが空の場合
-                                Text("お気に入りの絵本が登録されていません")
+                                Text(String(localized: "mypage.no_favorites"))
                                     .font(.system(size: 14, weight: .regular))
                                     .foregroundColor(.white.opacity(0.7))
                                     .frame(maxWidth: .infinity)
@@ -289,8 +291,20 @@ struct My_Page_View2: View {
                     newChildBirthDate = Date()
                 }
             )
-            .presentationDragIndicator(.visible)
+                .presentationDragIndicator(.visible)
             .presentationDetents([.fraction(0.5)])
+            .presentationCornerRadius(32)
+        }
+        .sheet(isPresented: $showNicknameEditSheet) {
+            NicknameEditSheetView(
+                isPresented: $showNicknameEditSheet,
+                currentNickname: viewModel.username,
+                onSave: { newNickname in
+                    return await viewModel.updateNickname(newNickname: newNickname)
+                }
+            )
+            .presentationDragIndicator(.visible)
+            .presentationDetents([.fraction(0.4)])
             .presentationCornerRadius(32)
         }
     }

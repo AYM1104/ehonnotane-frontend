@@ -76,8 +76,8 @@ struct Question_View: View {
                     .frame(height: 80)
                 
                 // メインテキスト
-                MainText(text: "どんな おはなしかな？")
-                MainText(text: "おしえてね！")
+                MainText(text: String(localized: "question.title_line1"))
+                MainText(text: String(localized: "question.title_line2"))
                 Spacer()
                 
                 // メインカード
@@ -157,14 +157,14 @@ struct Question_View: View {
                 .zIndex(2)
             }
         }
-        .alert("お知らせ", isPresented: $viewModel.showAlert) {
+        .alert(String(localized: "common.notice"), isPresented: $viewModel.showAlert) {
             Button("OK") { }
         } message: {
             Text(viewModel.alertMessage)
         }
         // ナビゲーション確認アラート
-        .alert("確認", isPresented: $showNavigationAlert) {
-            Button("キャンセル", role: .cancel) {
+        .alert(String(localized: "common.confirmation"), isPresented: $showNavigationAlert) {
+            Button(String(localized: "common.cancel"), role: .cancel) {
                 pendingNavigationAction = nil
             }
             Button("OK", role: .destructive) {
@@ -173,7 +173,7 @@ struct Question_View: View {
                 }
             }
         } message: {
-            Text("これまでの操作が保存されずに画面が移動します。よろしいですか？")
+            Text(String(localized: "theme.navigation_warning"))
         }
     }
     
@@ -312,8 +312,8 @@ struct Question_View_Preview: View {
                     .frame(height: 80)
                 
                 // メインテキスト
-                MainText(text: "どんな おはなしかな？")
-                MainText(text: "おしえてね！")
+                MainText(text: String(localized: "question.title_line1"))
+                MainText(text: String(localized: "question.title_line2"))
                 Spacer()
                 
                 // ガラス風カードを表示

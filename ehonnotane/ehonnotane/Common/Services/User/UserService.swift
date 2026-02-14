@@ -70,5 +70,30 @@ class UserService: ObservableObject {
             self.currentUser = nil
         }
     }
+    
+    /// ユーザー名を更新
+    /// - Parameters:
+    ///   - userId: ユーザーID
+    ///   - newName: 新しいユーザー名
+    func updateUserName(userId: String, newName: String) async throws -> User {
+        struct UpdateUserRequest: Encodable {
+            let user_name: String
+        }
+        
+        let endpoint = "/api/users/\(userId)"
+        let body = UpdateUserRequest(user_name: newName)
+        
+        let updatedUser: User = try await APIClient.shared.request(
+            endpoint: endpoint,
+            method: .put,
+            body: body
+        )
+        
+        await MainActor.run {
+            self.currentUser = updatedUser
+        }
+        
+        return updatedUser
+    }
 }
 

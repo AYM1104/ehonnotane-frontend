@@ -48,7 +48,7 @@ public class AuthManager: ObservableObject {
             // 認証成功したが、バックエンドとの同期が必要
             guard let userInfo = result.userInfo else {
                 isLoading = false
-                errorMessage = "ユーザー情報が取得できませんでした"
+                errorMessage = String(localized: "auth.error.user_info_not_found")
                 return
             }
             
@@ -73,7 +73,7 @@ public class AuthManager: ObservableObject {
                     await MainActor.run {
                         self.isLoggedIn = false
                         self.currentProvider = nil
-                        self.errorMessage = "ログイン処理に失敗しました: \(error.localizedDescription)"
+                        self.errorMessage = String(localized: "auth.error.login_failed")
                         self.userInfo = nil
                         self.isLoading = false
                         print("❌ 同期失敗: \(error)")
@@ -84,7 +84,7 @@ public class AuthManager: ObservableObject {
             isLoading = false
             isLoggedIn = false
             currentProvider = nil
-            errorMessage = result.error?.localizedDescription ?? "認証に失敗しました"
+            errorMessage = result.error?.localizedDescription ?? String(localized: "auth.error.auth_failed")
             userInfo = nil
             
             print("❌ 認証失敗: \(result.provider.displayName) - \(errorMessage ?? "")")

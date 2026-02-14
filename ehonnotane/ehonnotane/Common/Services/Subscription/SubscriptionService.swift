@@ -148,11 +148,11 @@ class SubscriptionService {
     func monthlyCredits(for productId: String) -> Int {
         switch productId {
         case "com.ehonnotane.subscription.starter":
-            return 350
+            return 600
         case "com.ehonnotane.subscription.plus":
-            return 700
+            return 1000
         case "com.ehonnotane.subscription.premium":
-            return 1200
+            return 1500
         default:
             return 0
         }

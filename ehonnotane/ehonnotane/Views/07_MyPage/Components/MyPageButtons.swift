@@ -14,7 +14,7 @@ public struct MyPageButtons: View {
         HStack(spacing: 12) {
             // 左側：コインチャージボタン
             PrimaryButton(
-                title: "コインチャージ",
+                title: String(localized: "mypage.coin_charge"),
                 style: .primary,
                 width: 170,
                 fontName: nil,
@@ -28,7 +28,7 @@ public struct MyPageButtons: View {
             
             // 右側：利用履歴ボタン
             PrimaryButton(
-                title: "利用履歴",
+                title: String(localized: "mypage.usage_history"),
                 style: .secondary,
                 width: 170,
                 fontName: nil,

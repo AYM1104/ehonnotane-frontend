@@ -125,7 +125,7 @@ struct Top_View: View {
                             .scaleEffect(1.5)
                         
                         // ローディングテキスト
-                        Text("ログイン中...")
+                        Text(String(localized: "common.logging_in"))
                             .font(.custom("YuseiMagic-Regular", size: 20))
                             .foregroundColor(.white)
                     }

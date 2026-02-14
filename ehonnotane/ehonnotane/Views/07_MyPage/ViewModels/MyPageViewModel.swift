@@ -175,6 +175,36 @@ class MyPageViewModel: BaseViewModel {
         }
     }
     
+    /// ニックネームを更新
+    func updateNickname(newNickname: String) async -> Bool {
+        print("🔵 [MyPageViewModel] updateNickname() 開始 - 新しいニックネーム: \(newNickname)")
+        
+        guard let userId = currentUserId else {
+            print("❌ [MyPageViewModel] ユーザーIDが取得できません")
+            setError("ユーザーIDが取得できません")
+            return false
+        }
+        
+        let trimmedNickname = newNickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedNickname.isEmpty else {
+            print("❌ [MyPageViewModel] ニックネームが空です")
+            setError("ニックネームを入力してください")
+            return false
+        }
+        
+        do {
+            _ = try await userService.updateUserName(userId: userId, newName: trimmedNickname)
+            print("✅ [MyPageViewModel] ニックネーム更新成功: \(trimmedNickname)")
+            // ビューの再描画をトリガー（usernameはcomputed propertyのため）
+            objectWillChange.send()
+            return true
+        } catch {
+            print("❌ [MyPageViewModel] ニックネーム更新に失敗: \(error)")
+            setError("ニックネームの更新に失敗しました")
+            return false
+        }
+    }
+    
     /// お子様を追加
     func addChild(name: String, birthDate: Date) async {
         print("🔵 [MyPageViewModel] addChild() 開始 - 名前: \(name)")

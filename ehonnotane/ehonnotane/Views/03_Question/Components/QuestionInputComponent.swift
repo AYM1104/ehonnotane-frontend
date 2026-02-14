@@ -15,7 +15,7 @@ struct QuestionInputComponent: View {
             
             // InputBoxコンポーネントを使用
             InputBox(
-                placeholder: question.placeholder ?? "ここに入力",
+                placeholder: question.placeholder ?? String(localized: "common.input_here"),
                 text: $answer,
                 isFocused: isTextFieldFocused
             )
@@ -23,7 +23,7 @@ struct QuestionInputComponent: View {
             
             // 最後のページの場合は送信ボタンを表示
             if showSubmitButton {
-                PrimaryButton(title: "送信する", action: {
+                PrimaryButton(title: String(localized: "question.submit"), action: {
                     onSubmit?()
                 })
                 .disabled(isSubmitting)

@@ -4,6 +4,7 @@ import SwiftUI
 struct DrawerItemRow: View {
     let title: String
     let icon: Image
+    var value: String? = nil  // 右側に表示する値（オプショナル）
     let action: () -> Void
     
     private var subTextColor: Color {
@@ -26,9 +27,15 @@ struct DrawerItemRow: View {
                 
                 Spacer()
                 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(subTextColor.opacity(0.6))
+                if let value = value {
+                    Text(value)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(subTextColor)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(subTextColor.opacity(0.6))
+                }
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 12)

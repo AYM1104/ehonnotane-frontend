@@ -14,8 +14,15 @@ struct PriceView: View {
     
     // エラーアラート
     @State private var showingAlert = false
-    @State private var alertTitle = "エラー"
+    @State private var alertTitle = String(localized: "common.error")
     @State private var alertMessage = ""
+    
+    // クレジット購入シート
+    @State private var showCreditPurchaseSheet = false
+    
+    // 利用規約・プライバシーポリシー表示フラグ
+    @State private var showTermsOfService = false
+    @State private var showPrivacyPolicy = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -24,7 +31,7 @@ struct PriceView: View {
             
             // ローディング表示
             if storeKitManager.isLoading {
-                ProgressView("処理中...")
+                ProgressView(String(localized: "common.processing"))
                     .padding()
                     .background(Color.black.opacity(0.7))
                     .cornerRadius(10)
@@ -38,15 +45,89 @@ struct PriceView: View {
                     .frame(height: 80)
                 
                 // メインテキスト
-                MainText(text: "えほんの たねを")
-                MainText(text: "そだてよう！")
+                MainText(text: String(localized: "price.header_line1"))
+                MainText(text: String(localized: "price.header_line2"))
                 Spacer().frame(height: 28)
-                MainText(text: "プランを選んで たくさんの物語を 育ててね", fontSize: 20)
+                MainText(text: String(localized: "price.header_subtitle"), fontSize: 20)
                 Spacer().frame(height: 40)
 
                 // メインカード（カルーセル）
                 Carousel()
-                    .padding(.bottom, -10)
+                
+                // クレジット個別購入ボタン
+                Spacer()
+                Button(action: { showCreditPurchaseSheet = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16))
+                        Text(String(localized: "price.buy_credits_individually"))
+                            .font(.custom("YuseiMagic-Regular", size: 16))
+                    }
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.white.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                }
+                .sheet(isPresented: $showCreditPurchaseSheet) {
+                    CreditPurchaseView()
+                }
+                
+                // 購入を復元 | 利用規約 | プライバシーポリシー
+                Spacer().frame(height: 16)
+                HStack(spacing: 8) {
+                    Button(action: {
+                        Task {
+                            do {
+                                try await storeKitManager.restorePurchases()
+                                alertTitle = String(localized: "common.complete")
+                                alertMessage = String(localized: "price.restore_success")
+                                showingAlert = true
+                            } catch {
+                                alertTitle = String(localized: "common.error")
+                                alertMessage = String(localized: "price.restore_failed")
+                                showingAlert = true
+                            }
+                        }
+                    }) {
+                        Text(String(localized: "price.restore_purchases"))
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.6))
+                            .underline()
+                    }
+                    Text("|")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.4))
+                    Button(action: { showTermsOfService = true }) {
+                        Text(String(localized: "settings.terms"))
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.6))
+                            .underline()
+                    }
+                    Text("|")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.4))
+                    Button(action: { showPrivacyPolicy = true }) {
+                        Text(String(localized: "settings.privacy"))
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.6))
+                            .underline()
+                    }
+                }
+                .sheet(isPresented: $showTermsOfService) {
+                    LegalDocumentView(documentType: .termsOfService)
+                }
+                .sheet(isPresented: $showPrivacyPolicy) {
+                    LegalDocumentView(documentType: .privacyPolicy)
+                }
+                
+                Spacer().frame(height: 4)
             }
             // ヘッダー
             Header()
@@ -73,7 +154,7 @@ private extension PriceView {
     func Carousel() -> some View {
         // カードを3枚に固定
         let cards = Array(0..<3)
-        let cardSpacing: CGFloat = 16
+        let cardSpacing: CGFloat = 12
         
         GeometryReader { proxy in
             // 画面幅ベースでレイアウト計算（UIKit 不要）
@@ -86,7 +167,9 @@ private extension PriceView {
 
             HStack(spacing: cardSpacing) {
                 ForEach(cards, id: \.self) { index in
-                    mainCard(width: .screen95) {
+                    mainCard(width: .screen95, height: 420) {
+                        // 上下にSpacerを入れて中央配置
+                        Spacer()
                         // カード内容（例）：プラン名・価格など
                         VStack(spacing: 12) {
                             // ロゴ
@@ -96,24 +179,43 @@ private extension PriceView {
                                 .frame(height: 10)
                             
                             HStack(alignment: .lastTextBaseline) {
-                                MainText(text: planTitle(for: index))          // 例: 20pt
-                                MainText(text: "プラン", fontSize: 18)         // 小さめでも下が揃う
+                                Text(planTitle(for: index))
+                                    .font(.custom("YuseiMagic-Regular", size: 28))
+                                    .foregroundColor(.white)
+                                Text(String(localized: "price.plan_label"))
+                                    .font(.custom("YuseiMagic-Regular", size: 18))
+                                    .foregroundColor(.white)
                             }
                             Spacer().frame(height: 8)
-                            MainText(text: planSubtitle(for: index), fontSize: 18)
+                            Text(planSubtitle(for: index))
+                                .font(.custom("YuseiMagic-Regular", size: 18))
+                                .foregroundColor(.white)
                             Spacer().frame(height: 8)
                             HStack(alignment: .lastTextBaseline) {
-                                MainText(text: planPrice(for: index), fontSize: 42)
-                                MainText(text: " / 月")
+                                Text(planPrice(for: index))
+                                    .font(.custom("YuseiMagic-Regular", size: 42))
+                                    .foregroundColor(.white)
+                                Text(String(localized: "price.per_month"))
+                                    .font(.custom("YuseiMagic-Regular", size: 28))
+                                    .foregroundColor(.white)
                             }
                             // プラン毎のクレジット数（先頭にチェックアイコン）
                             Spacer().frame(height: 6)
-                            featureRow("毎月 \(planMonthlyCredits(for: index)) クレジット")
+                            HStack(alignment: .center, spacing: 8) {
+                                Image(systemName: "checkmark.app")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 18, height: 18)
+                                    .foregroundStyle(Color.white)
+                                Text(String(localized: "price.monthly_credits \(planMonthlyCredits(for: index))"))
+                                    .font(.custom("YuseiMagic-Regular", size: 18))
+                                    .foregroundColor(.white)
+                            }
                             
                             // ボタン
                             Spacer().frame(height: 12)
                             PrimaryButton(
-                                title: "このプランに決定",
+                                title: String(localized: "price.select_plan"),
                                 width: cardWidth * 0.8,
                                 action: {
                                     // プラン選択のアクション
@@ -122,6 +224,7 @@ private extension PriceView {
                             )
                         }
                         .padding(.vertical, 12)
+                        Spacer()
                     }
                     .frame(width: cardWidth)
                     .scaleEffect(index == currentIndex ? 1.0 : 0.9)
@@ -166,9 +269,9 @@ private extension PriceView {
     // プラン名などのダミー文言をインデックスで切り替え
     func planTitle(for index: Int) -> String {
         switch index {
-        case 0: return "はじめてのたね"
-        case 1: return "そだてるたね"
-        default: return "わくわくのたね"
+        case 0: return String(localized: "price.plan_starter")
+        case 1: return String(localized: "price.plan_plus")
+        default: return String(localized: "price.plan_premium")
         }
     }
 
@@ -183,9 +286,9 @@ private extension PriceView {
 
     func planSubtitle(for index: Int) -> String {
         switch index {
-        case 0: return "はじめての ものがたり におすすめ"
-        case 1: return "たくさん そだてたい きみに"
-        default: return "みんなで たのしむ ぜいたくプラン"
+        case 0: return String(localized: "price.plan_starter_subtitle")
+        case 1: return String(localized: "price.plan_plus_subtitle")
+        default: return String(localized: "price.plan_premium_subtitle")
         }
     }
 
@@ -211,9 +314,9 @@ private extension PriceView {
     // 数値は仮値。必要に応じて調整してください
     func planMonthlyCredits(for index: Int) -> Int {
         switch index {
-        case 0: return 350
-        case 1: return 700
-        default: return 1200
+        case 0: return 600
+        case 1: return 1000
+        default: return 1500
         }
     }
     
@@ -257,8 +360,8 @@ private extension PriceView {
         
         // StoreKitManagerから該当プロダクトを検索
         guard let product = storeKitManager.availableProducts.first(where: { $0.id == productId }) else {
-            alertTitle = "エラー"
-            alertMessage = "プロダクトが見つかりません。\n少し待ってから再度お試しください。"
+            alertTitle = String(localized: "common.error")
+            alertMessage = String(localized: "price.error_product_not_found")
             showingAlert = true
             return
         }
@@ -270,8 +373,8 @@ private extension PriceView {
                 print("✅ 購入完了: \(transaction.productID)")
                 
                 // 成功メッセージ
-                alertTitle = "完了"
-                alertMessage = "🎉 \(planName) の登録が完了しました！\n\nクレジットが付与されました。"
+                alertTitle = String(localized: "common.complete")
+                alertMessage = String(localized: "price.purchase_success \(planName)")
                 showingAlert = true
                 
             } catch StoreKitError.purchaseCancelled {
@@ -280,8 +383,8 @@ private extension PriceView {
                 
             } catch {
                 print("❌ 購入エラー: \(error)")
-                alertTitle = "エラー"
-                alertMessage = "購入に失敗しました。\n\n\(error.localizedDescription)"
+                alertTitle = String(localized: "common.error")
+                alertMessage = String(localized: "price.purchase_failed \(error.localizedDescription)")
                 showingAlert = true
             }
         }

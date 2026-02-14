@@ -332,4 +332,48 @@ public class StorybookListService {
             throw StorybookAPIError.networkError(error)
         }
     }
+    
+    // MARK: - 絵本削除
+    
+    /// ストーリーブックを削除する
+    func deleteStorybook(storybookId: Int) async throws {
+        try checkAuthBeforeRequest()
+        
+        guard let url = URL(string: "\(baseURL)/api/storybook/\(storybookId)") else {
+            throw StorybookAPIError.invalidURL
+        }
+        
+        guard let token = getAccessToken() else {
+            throw StorybookAPIError.serverError(401, "認証が必要です")
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw StorybookAPIError.invalidResponse
+            }
+            
+            if httpResponse.statusCode == 401 {
+                handleAuthError(StorybookAPIError.serverError(401, "認証エラー"))
+                throw StorybookAPIError.serverError(401, "認証エラー")
+            }
+            
+            guard 200...299 ~= httpResponse.statusCode else {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "不明なエラー"
+                throw StorybookAPIError.serverError(httpResponse.statusCode, errorMessage)
+            }
+            
+            print("✅ 絵本削除成功: storybookId=\(storybookId)")
+        } catch let error as StorybookAPIError {
+            handleAuthError(error)
+            throw error
+        } catch {
+            print("❌ 絵本削除失敗: \(error)")
+            throw StorybookAPIError.networkError(error)
+        }
+    }
 }

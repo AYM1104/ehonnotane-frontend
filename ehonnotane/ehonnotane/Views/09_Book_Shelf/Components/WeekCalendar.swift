@@ -64,7 +64,7 @@ struct WeekCalendarView: View {
         }
         
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.locale = Locale.current
         
         let startMonth = calendar.component(.month, from: startDate)
         let endMonth = calendar.component(.month, from: endDate)
@@ -73,14 +73,14 @@ struct WeekCalendarView: View {
         
         if startYear == endYear && startMonth == endMonth {
             // 同じ月の場合
-            formatter.dateFormat = "yyyy年M月d日"
+            formatter.setLocalizedDateFormatFromTemplate("yMMMd")
             let startStr = formatter.string(from: startDate)
-            formatter.dateFormat = "d日"
+            formatter.setLocalizedDateFormatFromTemplate("d")
             let endStr = formatter.string(from: endDate)
             return "\(startStr)〜\(endStr)"
         } else {
             // 異なる月の場合
-            formatter.dateFormat = "yyyy年M月d日"
+            formatter.setLocalizedDateFormatFromTemplate("yMMMd")
             let startStr = formatter.string(from: startDate)
             let endStr = formatter.string(from: endDate)
             return "\(startStr)〜\(endStr)"
@@ -94,7 +94,15 @@ struct WeekCalendarGrid: View {
     @Binding var selectedDate: YearMonthDay?
     let markedDates: Set<YearMonthDay>
     
-    private let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+    /// 曜日ヘッダーを現在のロケールから取得
+    private var weekdays: [String] {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        // veryShortWeekdaySymbolsは日・月・火... または Sun・Mon・Tue... などを返す
+        var symbols = formatter.veryShortWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+        // Calendarの週の開始日に合わせる（日曜始まりの場合はそのまま）
+        return symbols
+    }
     
     var body: some View {
         VStack(spacing: 8) {

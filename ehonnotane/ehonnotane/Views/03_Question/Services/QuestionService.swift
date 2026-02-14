@@ -16,17 +16,17 @@ enum QuestionAPIError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "無効なURLです"
+            return String(localized: "error.invalid_url")
         case .noData:
-            return "データが取得できませんでした"
+            return String(localized: "error.no_data")
         case .decodingError:
-            return "データの解析に失敗しました"
+            return String(localized: "error.decoding_failed")
         case .networkError(let error):
-            return "ネットワークエラー: \(error.localizedDescription)"
+            return String(localized: "error.network \(error.localizedDescription)")
         case .serverError(let code, let message):
-            return "サーバーエラー (\(code)): \(message)"
+            return String(localized: "error.server \(code) \(message)")
         case .questionsNotFound:
-            return "質問が見つかりません"
+            return String(localized: "question.not_found")
         }
     }
 }
@@ -52,8 +52,15 @@ class QuestionService: ObservableObject {
         
         print("❓ Fetching questions from: \(url)")
         
+        // デバイスの言語設定を取得
+        let preferredLanguage = Locale.preferredLanguages.first ?? "ja"
+        print("📝 Device Language: \(preferredLanguage)")
+        
+        var request = URLRequest(url: url)
+        request.setValue(preferredLanguage, forHTTPHeaderField: "Accept-Language")
+        
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+            let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
                 print("📊 HTTP Status Code: \(httpResponse.statusCode)")
@@ -64,10 +71,10 @@ class QuestionService: ObservableObject {
                 case 404:
                     throw QuestionAPIError.questionsNotFound
                 case 400...599:
-                    let errorMessage = String(data: data, encoding: .utf8) ?? "不明なエラー"
+                    let errorMessage = String(data: data, encoding: .utf8) ?? String(localized: "error.unknown")
                     throw QuestionAPIError.serverError(httpResponse.statusCode, errorMessage)
                 default:
-                    throw QuestionAPIError.serverError(httpResponse.statusCode, "予期しないエラー")
+                    throw QuestionAPIError.serverError(httpResponse.statusCode, String(localized: "error.unexpected"))
                 }
             }
             
@@ -193,13 +200,13 @@ class QuestionService: ObservableObject {
                     case 200, 201:
                         break
                     case 404:
-                        let errorMessage = String(data: data, encoding: .utf8) ?? "リソースが見つかりません"
+                        let errorMessage = String(data: data, encoding: .utf8) ?? String(localized: "error.not_found")
                         throw QuestionAPIError.serverError(404, errorMessage)
                     case 400...599:
-                        let errorMessage = String(data: data, encoding: .utf8) ?? "不明なエラー"
+                        let errorMessage = String(data: data, encoding: .utf8) ?? String(localized: "error.unknown")
                         throw QuestionAPIError.serverError(httpResponse.statusCode, errorMessage)
                     default:
-                        throw QuestionAPIError.serverError(httpResponse.statusCode, "予期しないエラー")
+                        throw QuestionAPIError.serverError(httpResponse.statusCode, String(localized: "error.unexpected"))
                     }
                 }
                 if let jsonString = String(data: data, encoding: .utf8) {

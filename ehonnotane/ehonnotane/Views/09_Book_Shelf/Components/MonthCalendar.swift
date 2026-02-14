@@ -77,7 +77,7 @@ struct MonthCalendarView: View {
                             displayedComponents: [.date]
                         )
                         .datePickerStyle(.wheel)
-                        .environment(\.locale, Locale(identifier: "ja_JP"))
+                        .environment(\.locale, Locale.current)
                         Spacer()
                     }
                     .padding(.leading)
@@ -86,11 +86,11 @@ struct MonthCalendarView: View {
                     
                     Spacer()
                 }
-                .navigationTitle("年月を選択")
+                .navigationTitle(String(localized: "calendar.select_date"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("閉じる") {
+                        Button(String(localized: "common.close")) {
                             showDatePicker = false
                         }
                     }
@@ -103,8 +103,8 @@ struct MonthCalendarView: View {
     /// 年月をフォーマットする
     private func formatYearMonth(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年M月"
-        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.setLocalizedDateFormatFromTemplate("yMMMM")
+        formatter.locale = Locale.current
         return formatter.string(from: date)
     }
 }
@@ -115,7 +115,13 @@ struct CalendarGrid: View {
     @Binding var selectedDate: YearMonthDay?
     let markedDates: Set<YearMonthDay>
     
-    private let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+    /// 曜日ヘッダーを現在のロケールから取得
+    private var weekdays: [String] {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        // veryShortWeekdaySymbolsは日・月・火... または Sun・Mon・Tue... などを返す
+        return formatter.veryShortWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+    }
     
     var body: some View {
         VStack(spacing: 8) {
