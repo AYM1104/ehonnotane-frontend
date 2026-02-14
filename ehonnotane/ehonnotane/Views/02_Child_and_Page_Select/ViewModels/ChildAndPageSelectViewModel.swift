@@ -191,8 +191,9 @@ class ChildAndPageSelectViewModel: ObservableObject {
     
     // サブスクプランに基づいて選択可能ページ数を表示
     private func updateAvailablePageOptions() {
-        // FreeとBasic(STARTER)は5ページまで選択可能、7/10はロック表示
-        if subscriptionPlan == .free || subscriptionPlan == .starter {
+        // Freeプランは5ページまで選択可能、7/10はロック表示
+        // サブスクプラン利用者（STARTER/PLUS/PREMIUM）は全ページ選択可能
+        if subscriptionPlan == .free {
             self.availablePageCountOptions = allPageCountOptions.map { option in
                 guard let value = Int(option.value) else { return option }
                 if value > 5 {
