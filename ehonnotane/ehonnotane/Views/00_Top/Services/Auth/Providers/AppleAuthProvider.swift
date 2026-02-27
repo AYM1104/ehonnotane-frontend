@@ -123,55 +123,33 @@ class AppleAuthProvider: ObservableObject, AuthProvider {
             print("Access Token: \(credentials.accessToken)")
             print("ID Token: \(credentials.idToken)")
             
-            // Supabaseにユーザー情報を登録（エラーが発生した場合はログイン失敗として扱う）
+            // Auth0認証成功 → AuthResultをsuccess:trueで返す
+            // バックエンドとの同期はAuthManager.handleAuthResult内のsyncUserで行う
+            // ※ registerUserToSupabase は削除済み（syncUser と競合してユーザー二重作成エラーの原因となっていたため）
             if let userInfo = userInfo {
-                Task {
-                    do {
-                        try await registerUserToSupabase(userInfo: userInfo)
-                        print("✅ ユーザー登録完了")
-                        
-                        // 成功した場合のみAuthResultを返す
-                        await MainActor.run {
-                            let authResult = AuthResult(
-                                success: true,
-                                provider: .apple,
-                                accessToken: credentials.accessToken,
-                                idToken: credentials.idToken,
-                                userInfo: userInfo
-                            )
-                            // AuthManagerに直接反映（コールバックも呼び出し）
-                            self.authManager?.handleAuthResult(authResult)
-                            completion(authResult)
-                        }
-                    } catch {
-                        print("❌ ユーザー登録エラー: \(error.localizedDescription)")
-                        // エラーが発生した場合はログイン失敗として扱う
-                        await MainActor.run {
-                            self.isLoggedIn = false
-                            self.errorMessage = "サーバーへの接続に失敗しました: \(error.localizedDescription)"
-                            
-                            completion(AuthResult(
-                                success: false,
-                                provider: .apple,
-                                error: error
-                            ))
-                        }
-                    }
-                }
+                // Auth0認証成功時点でAuthResultを返す
+                let authResult = AuthResult(
+                    success: true,
+                    provider: .apple,
+                    accessToken: credentials.accessToken,
+                    idToken: credentials.idToken,
+                    userInfo: userInfo
+                )
+                // AuthManagerに直接反映（コールバックも呼び出し）
+                self.authManager?.handleAuthResult(authResult)
+                completion(authResult)
             } else {
-                // userInfoが取得できない場合
-                DispatchQueue.main.async {
-                    self.isLoggedIn = false
-                    self.errorMessage = "ユーザー情報の取得に失敗しました"
-                    
-                    completion(AuthResult(
-                        success: false,
-                        provider: .apple,
-                        error: NSError(domain: "AuthError", code: -1, userInfo: [
-                            NSLocalizedDescriptionKey: "ユーザー情報の取得に失敗しました"
-                        ])
-                    ))
-                }
+                // userInfoが取得できない場合（JWTデコード失敗）
+                self.isLoggedIn = false
+                self.errorMessage = "ユーザー情報の取得に失敗しました"
+                
+                completion(AuthResult(
+                    success: false,
+                    provider: .apple,
+                    error: NSError(domain: "AuthError", code: -1, userInfo: [
+                        NSLocalizedDescriptionKey: "ユーザー情報の取得に失敗しました"
+                    ])
+                ))
             }
             
         case .failure(let error):

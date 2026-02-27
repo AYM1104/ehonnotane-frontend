@@ -2,6 +2,8 @@ import SwiftUI
 import StoreKit
 
 struct PriceView: View {
+    @EnvironmentObject private var coordinator: AppCoordinator
+    
     // StoreKit管理
     @StateObject private var storeKitManager = StoreKitManager.shared
     
@@ -44,9 +46,36 @@ struct PriceView: View {
                 Spacer()
                     .frame(height: 80)
                 
-                // メインテキスト
-                MainText(text: String(localized: "price.header_line1"))
-                MainText(text: String(localized: "price.header_line2"))
+                // メインテキストと戻るボタン
+                HStack(alignment: .top) {
+                    // 戻るボタン
+                    Button(action: {
+                        coordinator.goBack()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 32, weight: .bold)) // より太く大きいフォント
+                            .foregroundColor(.white)
+                    }
+                    .padding(.leading, 24)
+                    .padding(.top, 4) // テキストと高さを合わせるための微調整
+
+                    Spacer()
+
+                    // メインテキスト
+                    VStack(alignment: .center, spacing: 8) {
+                        MainText(text: String(localized: "price.header_line1"))
+                        MainText(text: String(localized: "price.header_line2"))
+                    }
+                    
+                    Spacer()
+                    
+                    // 右側のバランスを取るための透明なダミービュー
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.clear)
+                        .padding(.trailing, 24)
+                }
+                
                 Spacer().frame(height: 28)
                 MainText(text: String(localized: "price.header_subtitle"), fontSize: 20)
                 Spacer().frame(height: 40)

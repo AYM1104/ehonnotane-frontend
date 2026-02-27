@@ -45,7 +45,7 @@ class BookFromAPIModel: ObservableObject {
     }
     
     /// 絵本データを読み込む
-    func loadStorybook() async {
+    func loadStorybook(retryCount: Int = 0) async {
         DispatchQueue.main.async {
             self.isLoading = true
             self.errorMessage = nil
@@ -89,6 +89,16 @@ class BookFromAPIModel: ObservableObject {
             }
             
         } catch {
+            // 500エラーの場合は自動リトライ（最大3回）
+            if let apiError = error as? StorybookAPIError,
+               case .serverError(let code, _) = apiError,
+               code == 500, retryCount < 3 {
+                print("🔄 500エラー - 自動リトライ (\(retryCount + 1)/3)...")
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2秒待機
+                await loadStorybook(retryCount: retryCount + 1)
+                return
+            }
+            
             DispatchQueue.main.async {
                 print("❌ Error loading storybook: \(error)")
                 self.errorMessage = error.localizedDescription

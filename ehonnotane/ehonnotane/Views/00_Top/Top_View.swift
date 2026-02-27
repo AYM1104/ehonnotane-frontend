@@ -158,12 +158,13 @@ struct Top_View: View {
                 }
             }
         }
-        .onChange(of: authManager.errorMessage) { (_: String?, errorMessage: String?) in
-            // エラーメッセージが設定された場合、ログインモーダルを再度表示してエラーを表示
-            if let errorMessage = errorMessage, !errorMessage.isEmpty {
-                print("❌ 認証エラー: \(errorMessage)")
-                // エラーメッセージはLoginModalで表示される
-            }
+        .alert("エラー", isPresented: Binding(
+            get: { authManager.errorMessage != nil && authManager.errorMessage?.isEmpty == false },
+            set: { if !$0 { authManager.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(authManager.errorMessage ?? "")
         }
     }
 }

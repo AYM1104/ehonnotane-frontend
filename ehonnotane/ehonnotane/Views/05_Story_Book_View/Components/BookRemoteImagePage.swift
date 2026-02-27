@@ -102,7 +102,7 @@ struct BookRemoteImagePage_Previews: PreviewProvider {
                     URL(string: "https://picsum.photos/seed/ehon-page1/900/1600")!,
                     fit: .fill,
                     text: "ある日、ちいさなタネが風に乗って森へたどり着きました。\n森の動物たちが集まってきて、これから何が起こるのかドキドキしています。",
-                    textAreaHeight: 150
+                    textAreaHeight: 160
                 )
                 .previewDisplayName("通常ページ")
             }

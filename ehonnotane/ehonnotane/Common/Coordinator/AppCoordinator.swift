@@ -32,6 +32,9 @@ final class AppCoordinator: ObservableObject {
     /// ストーリーブックID
     @Published var storybookId: Int?
     
+    /// 前の画面（戻る先）
+    private var previousScreen: AppScreen?
+    
     /// 新規ユーザー登録画面に遷移
     func navigateToUserRegister() {
         isNavigatingAfterLogin = true
@@ -92,8 +95,19 @@ final class AppCoordinator: ObservableObject {
     
     /// 価格・プラン選択画面に遷移
     func navigateToPrice() {
+        let current = currentScreen
         DispatchQueue.main.async { [weak self] in
+            self?.previousScreen = current
             self?.currentScreen = .price
+        }
+    }
+    
+    /// 前の画面に戻る
+    func goBack() {
+        let destination = previousScreen ?? .uploadImage
+        DispatchQueue.main.async { [weak self] in
+            self?.currentScreen = destination
+            self?.previousScreen = nil
         }
     }
     

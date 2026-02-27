@@ -13,6 +13,9 @@ struct Theme_Select_View: View {
     @State private var showNavigationAlert: Bool = false
     @State private var pendingNavigationAction: (() -> Void)? = nil
     
+    // エラーアラート表示用
+    @State private var showErrorAlert: Bool = false
+    
     // クリーンアップサービス
     private let cleanupService = StorySettingCleanupService()
     
@@ -136,6 +139,29 @@ struct Theme_Select_View: View {
             Task {
                 await viewModel.loadThemeData(coordinator: coordinator)
             }
+        }
+        // エラーメッセージの変更を監視してアラート表示
+        .onChange(of: viewModel.errorMessage) { oldValue, newValue in
+            if newValue != nil && !viewModel.isGeneratingImages {
+                showErrorAlert = true
+            }
+        }
+        // エラーアラート（テーマデータがあっても表示される）
+        .alert("エラー", isPresented: $showErrorAlert) {
+            Button("リトライ") {
+                if currentPageIndex < viewModel.themePages.count {
+                    let page = viewModel.themePages[currentPageIndex]
+                    Task {
+                        viewModel.errorMessage = nil
+                        await viewModel.selectTheme(page: page, coordinator: coordinator)
+                    }
+                }
+            }
+            Button("OK", role: .cancel) {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "不明なエラーが発生しました")
         }
         // ナビゲーション確認アラート
         .alert(String(localized: "common.confirmation"), isPresented: $showNavigationAlert) {

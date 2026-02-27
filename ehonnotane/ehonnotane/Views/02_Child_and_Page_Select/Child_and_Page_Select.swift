@@ -10,6 +10,7 @@ struct Child_and_Page_Selection_View: View {
     @EnvironmentObject var coordinator: AppCoordinator
     
     @State private var showingCreditAlert: Bool = false
+    @State private var showingPlanUpgradeModal: Bool = false
     @State private var showingErrorAlert: Bool = false
     @State private var errorMessage: String = ""
     @State private var initialDataLoaded: Bool = false
@@ -52,6 +53,16 @@ struct Child_and_Page_Selection_View: View {
                     coordinator.navigateToPrice()
                 }
                 .zIndex(100) // 最前面に表示
+            }
+            
+            // 有料プラン案内モーダル
+            if showingPlanUpgradeModal {
+                PlanUpgradeModal(
+                    isPresented: $showingPlanUpgradeModal
+                ) {
+                    coordinator.navigateToPrice()
+                }
+                .zIndex(100)
             }
         }
         .task {
@@ -166,7 +177,7 @@ struct Child_and_Page_Selection_View: View {
                                     selection: $viewModel.selectedPageCount,
                                     subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)"),
                                     onLockedOptionTap: {
-                                        coordinator.navigateToPrice()
+                                        showingPlanUpgradeModal = true
                                     }
                                 ) {
                                     EmptyView()
@@ -209,19 +220,21 @@ struct Child_and_Page_Selection_View: View {
                     
                 } else {
                     // 子供が1人以下の場合は従来の単一カード表示
-                    SelectInputBoxCard(
-                        title: String(localized: "select.page_count_title"),
-                        options: viewModel.availablePageCountOptions,
-                        selection: $viewModel.selectedPageCount,
-                        subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)"),
-                        onLockedOptionTap: {
-                            coordinator.navigateToPrice()
+                    mainCard(width: .screen95) {
+                        SelectInputBoxCard(
+                            title: String(localized: "select.page_count_title"),
+                            options: viewModel.availablePageCountOptions,
+                            selection: $viewModel.selectedPageCount,
+                            subTitle: String(localized: "select.consume_credits \(viewModel.requiredCredits)"),
+                            onLockedOptionTap: {
+                                showingPlanUpgradeModal = true
+                            }
+                        ) {
+                            EmptyView()
+                        } footer: {
+                            decideButton
+                                .padding(.top, 16)
                         }
-                    ) {
-                        EmptyView()
-                    } footer: {
-                        decideButton
-                            .padding(.top, 16)
                     }
                 }
             }

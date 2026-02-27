@@ -19,6 +19,16 @@ enum PlanType: String, Codable {
     case starter = "STARTER"
     case plus = "PLUS"
     case premium = "PREMIUM"
+    
+    /// ドロワー等に表示するプラン名
+    var displayName: String {
+        switch self {
+        case .free: return "無料"
+        case .starter: return "スターター"
+        case .plus: return "プラス"
+        case .premium: return "プレミアム"
+        }
+    }
 }
 
 

@@ -267,8 +267,8 @@ public class StorybookService: ObservableObject {
         return try await storyGenerationService.createStorybook(storyPlotId: storyPlotId, selectedTheme: selectedTheme, childId: childId, storyPages: storyPages)
     }
     
-    func generateStoryImages(storybookId: Int) async throws -> ImageGenerationResponse {
-        return try await storyGenerationService.generateStoryImages(storybookId: storybookId)
+    func generateStoryImages(storybookId: Int, storyPages: Int) async throws -> ImageGenerationResponse {
+        return try await storyGenerationService.generateStoryImages(storybookId: storybookId, storyPages: storyPages)
     }
     
     func updateImageUrls(storybookId: Int) async throws -> ImageUrlUpdateResponse {

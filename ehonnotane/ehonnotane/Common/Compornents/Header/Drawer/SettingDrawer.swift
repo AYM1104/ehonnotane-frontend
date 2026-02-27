@@ -11,6 +11,9 @@ struct SettingDrawer: View {
     // クレジット残高
     @State private var creditBalance: Int = 0
     
+    // サブスクリプションプラン
+    @State private var subscriptionPlan: PlanType = .free
+    
     // アカウント削除画面の表示フラグ
     @State private var showAccountDeletion = false
     
@@ -86,6 +89,24 @@ struct SettingDrawer: View {
                             
                             // 項目リスト
                             VStack(alignment: .leading, spacing: 12) {
+                                // サブスクプラン表示
+                                DrawerItemRow(
+                                    title: String(localized: "settings.plan"),
+                                    icon: Image(systemName: "crown"),
+                                    value: subscriptionPlan.displayName
+                                ) {
+                                    // ドロワーを閉じてからPrice画面へ遷移
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                        slideIn = false
+                                    }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
+                                            isPresented = false
+                                        }
+                                        coordinator.navigateToPrice()
+                                    }
+                                }
+                                // 保有クレジット表示
                                 DrawerItemRow(
                                     title: String(localized: "settings.credits"),
                                     icon: Image("icon-coin"),
@@ -221,6 +242,7 @@ struct SettingDrawer: View {
                                 let user = try await UserService.shared.fetchUser(userId: userId)
                                 await MainActor.run {
                                     creditBalance = user.balance
+                                    subscriptionPlan = user.subscription_plan
                                 }
                             } catch {
                                 print("❌ SettingDrawer: ユーザー情報取得失敗: \(error)")

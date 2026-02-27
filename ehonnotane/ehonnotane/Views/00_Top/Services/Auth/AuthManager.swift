@@ -73,7 +73,7 @@ public class AuthManager: ObservableObject {
                     await MainActor.run {
                         self.isLoggedIn = false
                         self.currentProvider = nil
-                        self.errorMessage = String(localized: "auth.error.login_failed")
+                        self.errorMessage = "通信エラーが発生しました。時間を置いて再度お試しください。(\(error.localizedDescription))"
                         self.userInfo = nil
                         self.isLoading = false
                         print("❌ 同期失敗: \(error)")

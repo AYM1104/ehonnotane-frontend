@@ -171,7 +171,7 @@ public class StoryGenerationService {
     
     // MARK: - ステップ3: 画像生成
     
-    func generateStoryImages(storybookId: Int) async throws -> ImageGenerationResponse {
+    func generateStoryImages(storybookId: Int, storyPages: Int) async throws -> ImageGenerationResponse {
         guard let url = URL(string: "\(baseURL)/api/images/generation/generate-storyplot-all-pages-image-to-image") else {
             throw StorybookAPIError.invalidURL
         }
@@ -187,8 +187,9 @@ public class StoryGenerationService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
-        let requestBody = [
-            "storybook_id": storybookId
+        let requestBody: [String: Any] = [
+            "storybook_id": storybookId,
+            "story_pages": storyPages
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
@@ -279,7 +280,7 @@ public class StoryGenerationService {
             // ステップ3: 画像生成をCloud Tasksにキック（Cloud Runがバックグラウンドで処理）
             print("🎨 Step 3: Kicking off image generation (Cloud Tasks)...")
             do {
-                _ = try await self.generateStoryImages(storybookId: storybookResponse.storybookId)
+                _ = try await self.generateStoryImages(storybookId: storybookResponse.storybookId, storyPages: storyPages)
                 print("✅ Image generation task queued successfully")
             } catch {
                 print("⚠️ Image generation task queueing failed: \(error)")

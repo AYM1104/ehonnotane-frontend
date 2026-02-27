@@ -7,6 +7,7 @@ class ThemeSelectViewModel: ObservableObject {
     private let storybookService = StorybookService.shared
     private let authManager = AuthManager.shared
     private let userService = UserService.shared
+    private let liveActivityManager = LiveActivityManager.shared
     
     // MARK: - Published Properties
     @Published var themePages: [ThemePage] = []
@@ -18,6 +19,7 @@ class ThemeSelectViewModel: ObservableObject {
     @Published var currentStep = 0
     @Published var totalSteps = 5
     @Published var stepMessage = ""
+
     
     // クレジット不足モーダル表示
     @Published var showCreditInsufficientModal = false
@@ -156,6 +158,30 @@ class ThemeSelectViewModel: ObservableObject {
         stepMessage = "物語を書いています..."
         currentStep = 0
         
+        // --- Live Activity & バックグラウンド生成の開始 ---
+        // estimatedSeconds: 1ページあたり約20秒と仮定 + 物語生成10秒
+        let estimatedSeconds: TimeInterval = 10.0 + TimeInterval(storyPages * 20)
+        let childName = coordinator.questionData?.childId.description ?? "お子様" // TODO: 実際の名前に置き換えるか、今回はID等のフォールバック
+        
+        // バックグラウンドポーリング用の関数を注入
+        liveActivityManager.progressFetcher = { [weak self] storybookId in
+            guard let self = self else { throw StorybookAPIError.invalidResponse }
+            let progress = try await self.storybookService.fetchGenerationProgress(storybookId: storybookId)
+            return (
+                progressPercent: progress.progressPercent,
+                currentPage: progress.currentPage,
+                totalPages: progress.totalPages,
+                status: progress.status
+            )
+        }
+        
+        liveActivityManager.startActivity(
+            bookTitle: page.title,
+            childName: childName,
+            estimatedSeconds: estimatedSeconds
+        )
+        // ------------------------------------------
+
         // 早期フィードバック: 即座に5%表示
         progressPercentage = 0.05
         
@@ -184,6 +210,8 @@ class ThemeSelectViewModel: ObservableObject {
             )
             
             print("✅ ストーリーブック作成完了: \(storybookId)")
+            // LiveActivityManagerに実ポーリング用のIDを渡す
+            self.liveActivityManager.updateStorybookId(storybookId)
             
             // 物語生成完了、画像生成開始へ（15%からスタート）
             animateProgress(to: 0.15)
@@ -194,9 +222,25 @@ class ThemeSelectViewModel: ObservableObject {
             
         } catch {
             print("❌ ストーリーブック作成エラー: \(error)")
-            errorMessage = "絵本の作成に失敗しました"
+            // エラーの詳細をユーザーに表示（デバッグしやすくする）
+            let detailMessage: String
+            if let apiError = error as? StorybookAPIError {
+                switch apiError {
+                case .serverError(let code, let message):
+                    detailMessage = "サーバーエラー(\(code)): \(message)"
+                case .networkError(let underlying):
+                    detailMessage = "通信エラー: \(underlying.localizedDescription)"
+                default:
+                    detailMessage = "APIエラー: \(error.localizedDescription)"
+                }
+            } else {
+                detailMessage = error.localizedDescription
+            }
+            errorMessage = "絵本の作成に失敗しました。\n\(detailMessage)"
             isGeneratingImages = false
             stopTipRotation()
+            // Live Activityも終了
+            liveActivityManager.endActivity(status: "error", message: "エラーが発生しました")
         }
     }
     
@@ -265,6 +309,9 @@ class ThemeSelectViewModel: ObservableObject {
                 // 注意: ImageGenerationProgressMonitor は @MainActor なので、既に MainActor のコンテキストで実行されている
                 print("🎯 ThemeSelectViewModel: 画像生成完了 - StoryBookView へ遷移します (storybookId: \(storybookId))")
 
+                // Live Activityの完了通知
+                self.liveActivityManager.endActivity(status: "completed", message: "絵本が完成しました！")
+                
                 // 99%から100%へ（0.5秒でスムーズに）
                 self.progressStepperTask?.cancel()
                 self.animateProgress(to: 1.0, totalDurationSec: 0.5)
@@ -288,6 +335,7 @@ class ThemeSelectViewModel: ObservableObject {
                     self.errorMessage = errorMessage
                     self.isGeneratingImages = false
                     self.stopTipRotation()
+                    self.liveActivityManager.endActivity(status: "error", message: "エラーが発生しました")
                 }
             }
         )
@@ -363,6 +411,12 @@ class ThemeSelectViewModel: ObservableObject {
                     currentPage: currentPage,
                     totalPages: totalPages,
                     currentStep: ""  // 必要に応じてmonitorから取得
+                )
+                
+                // Live Activityの進捗を更新
+                self.liveActivityManager.updateProgress(
+                    progressText: self.stepMessage,
+                    progressValue: finalTarget
                 )
             }
             

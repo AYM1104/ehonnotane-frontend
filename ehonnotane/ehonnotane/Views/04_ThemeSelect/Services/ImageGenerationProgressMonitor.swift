@@ -21,6 +21,9 @@ class ImageGenerationProgressMonitor: ObservableObject {
     var onCompleted: (() async -> Void)?
     var onFailed: ((String) -> Void)?
     
+    // フォアグラウンド復帰時のポーリング再開用
+    private var foregroundObserver: NSObjectProtocol?
+    
     // MARK: - Initialization
     init(
         storybookId: Int,
@@ -35,6 +38,24 @@ class ImageGenerationProgressMonitor: ObservableObject {
         self.onFailed = onFailed
         if let initialTotalPages {
             self.totalPages = initialTotalPages
+        }
+        
+        // フォアグラウンド復帰時にポーリングを再開
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                // ポーリングが実行中のはずなのにタスクがキャンセルされている場合、再開
+                if self.isGeneratingImages && (self.progressPollingTask == nil || self.progressPollingTask?.isCancelled == true) {
+                    print("🔄 ImageGenerationProgressMonitor: フォアグラウンド復帰 - ポーリングを再開します")
+                    self.progressPollingTask = Task {
+                        await self.pollProgress()
+                    }
+                }
+            }
         }
     }
     
@@ -133,5 +154,8 @@ class ImageGenerationProgressMonitor: ObservableObject {
     
     deinit {
         progressPollingTask?.cancel()
+        if let observer = foregroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 }
