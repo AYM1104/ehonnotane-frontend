@@ -21,6 +21,7 @@ class LiveActivityManager: ObservableObject {
     private var estimatedCompletionTime: Date = Date()
     private var storybookId: Int?
     private var pollingTask: Task<Void, Never>?
+    private var pushTokenTask: Task<Void, Never>?
     
     // 実際の進捗を取得するためのクロージャー（メインアプリから注入）
     public var progressFetcher: ((Int) async throws -> (progressPercent: Int, currentPage: Int, totalPages: Int, status: String))?
@@ -31,17 +32,21 @@ class LiveActivityManager: ObservableObject {
     private init() {
         // フォアグラウンド復帰時にポーリングを再開
         foregroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.didBecomeActiveNotification,
+            forName: UIApplication.willEnterForegroundNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
             print("🔄 LiveActivityManager: フォアグラウンド復帰 - ポーリング再開チェック")
+            print("   storybookId=\(String(describing: self.storybookId)), activity=\(self.currentActivity != nil), pollingTask=\(String(describing: self.pollingTask)), cancelled=\(self.pollingTask?.isCancelled ?? true)")
             // storybookIdがあり、Activityがまだ存在する場合はポーリングを再開
             if self.storybookId != nil && self.currentActivity != nil {
                 print("🔄 LiveActivityManager: ポーリングを再開します")
                 // バックグラウンドタスクを再取得
                 self.beginBackgroundTask()
+                // 既存のポーリングをキャンセルしてから新しいタスクを開始（サスペンド状態のタスクを確実にリフレッシュ）
+                self.pollingTask?.cancel()
+                self.pollingTask = nil
                 self.startPollingTask()
             }
         }
@@ -64,13 +69,18 @@ class LiveActivityManager: ObservableObject {
             return
         }
 
-        if backgroundTaskID != .invalid { return } // 既に開始済み
+        if backgroundTaskID != .invalid {
+            print("ℹ️ LiveActivityManager: バックグラウンドタスクは既に開始済み (ID: \(backgroundTaskID))")
+            return
+        }
         
         backgroundTaskID = sharedApplication.beginBackgroundTask(withName: "GenerateBookTask") { [weak self] in
-            // システムによってタスクが強制終了される直前に呼ばれる
-            // 注意: Live Activityは終了させない（ダイナミックアイランドの表示を維持するため）
+            // システムによってタスクが強制終了される直前に呼ばれる（通常約30秒後）
+            // 注意: Live Activityとポーリングタスクは終了させない
             // フォアグラウンド復帰時にポーリングが再開される
-            print("⚠️ バックグラウンドタスクの制限時間に達しました（Live Activityは維持）")
+            print("⚠️ バックグラウンドタスクの制限時間に達しました")
+            print("   pollingTask=\(String(describing: self?.pollingTask)), storybookId=\(String(describing: self?.storybookId))")
+            print("   → Live Activity と pollingTask は維持。フォアグラウンド復帰時に再開されます")
             self?.endBackgroundTask()
         }
         print("✅ バックグラウンドタスクを開始しました (ID: \(backgroundTaskID))")
@@ -126,14 +136,17 @@ class LiveActivityManager: ObservableObject {
         )
         
         do {
-            // Activityの開始
+            // Activityの開始（pushType: .token でサーバーからの更新を有効化）
             let activity = try Activity.request(
                 attributes: attributes,
                 content: .init(state: initialContentState, staleDate: nil),
-                pushType: nil // Push通知で更新する場合は設定
+                pushType: .token
             )
             self.currentActivity = activity
             print("✅ Live Activityを開始しました: \(activity.id)")
+            
+            // pushTokenの更新を監視し、バックエンドに送信
+            observePushTokenUpdates(for: activity)
             
             // 同時にバックグラウンドタスクも開始
             beginBackgroundTask()
@@ -178,8 +191,13 @@ class LiveActivityManager: ObservableObject {
     
     /// 生成が完了、または失敗した時にActivityを終了させる
     func endActivity(status: String, message: String) {
-        // タイマーを止める
+        // 擬似タイマーを止める
         stopProgressTimer()
+        // ポーリングタスクも停止（生成完了/失敗時のみ）
+        stopPollingTask()
+        // pushToken監視タスクも停止
+        pushTokenTask?.cancel()
+        pushTokenTask = nil
         
         guard let activity = currentActivity else {
             // Activityが元々無かったとしてもバックグラウンドタスクは終了させる
@@ -241,8 +259,15 @@ class LiveActivityManager: ObservableObject {
     private func stopProgressTimer() {
         progressTimer?.invalidate()
         progressTimer = nil
+        // 注意: pollingTask はここではキャンセルしない
+        // endActivity() から明示的に stopPollingTask() を呼ぶ
+    }
+    
+    /// ポーリングタスクを明示的に停止する（生成完了/失敗時にのみ呼ぶ）
+    private func stopPollingTask() {
         pollingTask?.cancel()
         pollingTask = nil
+        print("⏹️ LiveActivityManager: ポーリングタスクを停止しました")
     }
     
     // MARK: - 実進捗ポーリング （バックグラウンド対応）
@@ -287,6 +312,34 @@ class LiveActivityManager: ObservableObject {
                 
                 // 3秒に1回ポーリング
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
+            }
+        }
+    }
+    
+    // MARK: - ActivityKit Push Token 管理
+    
+    /// Live ActivityのpushTokenをバックエンドに送信するクロージャー（メインアプリから注入）
+    /// パラメータ: (pushToken: String, storybookId: Int)
+    public var pushTokenSender: ((String, Int) async -> Void)?
+    
+    /// Live ActivityのpushTokenUpdatesを監視し、トークンをバックエンドに送信
+    private func observePushTokenUpdates(for activity: Activity<GenerationActivityAttributes>) {
+        pushTokenTask?.cancel()
+        pushTokenTask = Task {
+            for await tokenData in activity.pushTokenUpdates {
+                let tokenString = tokenData.map { String(format: "%02x", $0) }.joined()
+                print("🔑 Live Activity pushToken取得: \(tokenString.prefix(20))...")
+                
+                guard let storybookId = self.storybookId else {
+                    print("⚠️ storybookIdが未設定のため、pushToken送信をスキップ")
+                    continue
+                }
+                
+                if let sender = self.pushTokenSender {
+                    await sender(tokenString, storybookId)
+                } else {
+                    print("⚠️ pushTokenSenderが未設定のため、pushToken送信をスキップ")
+                }
             }
         }
     }

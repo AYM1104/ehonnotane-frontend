@@ -40,7 +40,7 @@ struct StoryPageViewFactory {
                         contentInset: 0,
                         fit: .fill,
                         text: page.text,
-                        textAreaHeight: 150,
+                        textAreaHeight: 160,
                         authManager: authManager
                     )
                 )

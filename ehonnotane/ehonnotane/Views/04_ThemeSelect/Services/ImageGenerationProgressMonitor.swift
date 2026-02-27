@@ -23,6 +23,7 @@ class ImageGenerationProgressMonitor: ObservableObject {
     
     // フォアグラウンド復帰時のポーリング再開用
     private var foregroundObserver: NSObjectProtocol?
+    private var willEnterForegroundObserver: NSObjectProtocol?
     
     // MARK: - Initialization
     init(
@@ -40,7 +41,19 @@ class ImageGenerationProgressMonitor: ObservableObject {
             self.totalPages = initialTotalPages
         }
         
-        // フォアグラウンド復帰時にポーリングを再開
+        // フォアグラウンド復帰時にポーリングを再開（willEnterForeground = より早い段階で検知）
+        willEnterForegroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.resumePollingIfNeeded(reason: "willEnterForeground")
+            }
+        }
+        
+        // didBecomeActive でも再開チェック（念押し）
         foregroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
             object: nil,
@@ -48,13 +61,7 @@ class ImageGenerationProgressMonitor: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self = self else { return }
-                // ポーリングが実行中のはずなのにタスクがキャンセルされている場合、再開
-                if self.isGeneratingImages && (self.progressPollingTask == nil || self.progressPollingTask?.isCancelled == true) {
-                    print("🔄 ImageGenerationProgressMonitor: フォアグラウンド復帰 - ポーリングを再開します")
-                    self.progressPollingTask = Task {
-                        await self.pollProgress()
-                    }
-                }
+                self.resumePollingIfNeeded(reason: "didBecomeActive")
             }
         }
     }
@@ -152,9 +159,34 @@ class ImageGenerationProgressMonitor: ObservableObject {
         }
     }
     
+    // MARK: - Private Helpers
+    
+    /// フォアグラウンド復帰時にポーリング中であれば再開する
+    private func resumePollingIfNeeded(reason: String) {
+        guard isGeneratingImages else {
+            print("ℹ️ ImageGenerationProgressMonitor: \(reason) - 生成中ではないためスキップ")
+            return
+        }
+        
+        print("🔄 ImageGenerationProgressMonitor: \(reason) - ポーリング再開チェック")
+        print("   isGenerating=\(isGeneratingImages), pollingTask=\(String(describing: progressPollingTask)), cancelled=\(progressPollingTask?.isCancelled ?? true)")
+        
+        // 既存のタスクをキャンセルして新しいタスクを開始（サスペンド状態のタスクを確実にリフレッシュ）
+        progressPollingTask?.cancel()
+        progressPollingTask = nil
+        
+        print("🔄 ImageGenerationProgressMonitor: \(reason) - ポーリングを再開します")
+        progressPollingTask = Task {
+            await self.pollProgress()
+        }
+    }
+    
     deinit {
         progressPollingTask?.cancel()
         if let observer = foregroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = willEnterForegroundObserver {
             NotificationCenter.default.removeObserver(observer)
         }
     }

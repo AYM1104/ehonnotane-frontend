@@ -175,6 +175,41 @@ class ThemeSelectViewModel: ObservableObject {
             )
         }
         
+        // Live Activity pushTokenをバックエンドに送信するクロージャーを注入
+        liveActivityManager.pushTokenSender = { [weak self] pushToken, storybookId in
+            guard self != nil else { return }
+            guard let accessToken = AuthManager.shared.getAccessToken() else {
+                print("⚠️ 認証トークンがないためpushToken送信をスキップ")
+                return
+            }
+            guard let url = URL(string: "\(APIConfig.shared.baseURL)/api/live-activity-tokens") else {
+                print("❌ 無効なURL")
+                return
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            
+            let body: [String: Any] = [
+                "push_token": pushToken,
+                "storybook_id": storybookId
+            ]
+            
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                let (_, response) = try await URLSession.shared.data(for: request)
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    print("✅ Live Activityプッシュトークンをバックエンドに送信しました (storybook_id=\(storybookId))")
+                } else {
+                    print("❌ Live Activityプッシュトークン送信失敗")
+                }
+            } catch {
+                print("❌ Live Activityプッシュトークン送信エラー: \(error.localizedDescription)")
+            }
+        }
+        
         liveActivityManager.startActivity(
             bookTitle: page.title,
             childName: childName,
